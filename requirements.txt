@@ -1,0 +1,10 @@
+flask>=0.11.1
+numpy>=1.11.2
+bokeh>=0.12.3
+pandas>=0.19.0
+requests>=2.9.1
+simplejson>=3.10.0
+gunicorn>=19.3.0
+oauth>=1.0.1
+oauthlib>=2.0.1
+quandl

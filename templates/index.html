@@ -1,0 +1,24 @@
+<!doctype html>
+<title> QuantFy </title>
+<div class=page>
+	<h1> Plot the desired stock features </h1>
+	<div class=metanav>
+	<h4>
+		Please enter a stock ticker eg. GOOG, and check desired features.
+	</h4>
+	<form id='tickersymform' method='post' action='index' >
+      <p>
+    Ticker Symbol: <input type='text' name='sym' />
+      </p>
+    <input id="cp" type="checkbox" name="closeprice"> Closing price <br>
+    <input id="acp" type="checkbox" name="adjclose"> Adjusted closing price <br>
+    <input id="op" type="checkbox" name="openprice"> Opening price <br>
+    <input id="aop" type="checkbox" name="adjopen"> Adjusted Opening price <br>
+    <input type='submit' value='Submit' />
+      </p>
+    </form>
+
+
+	</div>
+</div>
+</html>
