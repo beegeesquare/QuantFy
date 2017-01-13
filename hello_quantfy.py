@@ -26,7 +26,7 @@ def main():
 @app_quantfy.route('/index',methods=['GET','POST'])
 def index():
     if request.method=='GET':
-        return render_template('index.html') # This comes when the website address is requested
+        return render_template('index.html') # This comes when the website address is requested    
     else:
         
         # Define the variables. This is a local variable, but in Flask it will be passed to the plot route I guess
