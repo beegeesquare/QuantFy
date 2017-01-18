@@ -45,11 +45,7 @@ def index():
 @app_quantfy.route('/price_plot',methods=['GET','POST'])
 def plot_stock_prices():
     if request.method=='GET':
-<<<<<<< HEAD
-        return render_template('index.html') # This comes when the website address is requested    
-=======
         return render_template('plot_prices.html')
->>>>>>> f9c5b0da8dc1be8201809d5c65031b8a6397b2dd
     else:
         
         app_quantfy.vars={} # This is a dictionary
