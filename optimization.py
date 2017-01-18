@@ -37,8 +37,7 @@ def sharpe_function(allocs,df,sv=1000000,sf=252.0,rfr=0.0):
     
     return sr*-1
 
-def access_portfolio(sd=datetime.datetime(2008,1,1),ed=datetime.datetime(2009,1,1), sym=['GOOG','AAPL','GLD','XOM'],
-                     allocs=[0.1,0.2,0.3,0.4],sv=1000000,rfr=0.0,sf=252.0,gen_plot=False):
+def access_portfolio(df,bench_sym,allocs,sv,rfr=0.0,sf=252.0):
     """
     This function computes statistics for the portfolio
     Usage:
@@ -63,15 +62,12 @@ def access_portfolio(sd=datetime.datetime(2008,1,1),ed=datetime.datetime(2009,1,
     gen_plot: If True, create a plot named plot.png
     
     """
-    # First get data for the date and symbols
-    dt_range=pd.date_range(sd, ed) # Create series of dates for which the data needs to be obtained
-    
-    df=util.get_data(sym, dt_range); # This gets the adjust close value of the stock for each date and date frame index is date
+   
     
     # If SPY exists in the df, then drop it (we need SPY to get the dates for all the trading dates)
-    normalized_plot_df=pd.DataFrame(df.SPY/df.SPY[0],index=df.index)
+    normalized_plot_df=pd.DataFrame(df[bench_sym]/df[bench_sym][0],index=df.index)
     
-    df=df.drop('SPY',axis=1)
+    df=df.drop(bench_sym,axis=1)
     
     # To compute daily portfolio, we need to follow these steps:
     # 1. Normalize the prices according to the first day
@@ -109,14 +105,13 @@ def access_portfolio(sd=datetime.datetime(2008,1,1),ed=datetime.datetime(2009,1,
     
     # Plot the normalized portfolio again normalized SPY
     normalized_plot_df=normalized_plot_df.join(pd.DataFrame(df/df.ix[0],columns=['Portfolio']),how='inner')
-    if gen_plot==True:
-        util.plot_data(normalized_plot_df, title='Daily portfolio value and SPY',y_label='Normalized price')
     
-    return cr,adr,sddr,sr,ev
+    
+    return cr,adr,sddr,sr,ev,normalized_plot_df
 
 
-def optimize_portfolio(sd=datetime.datetime(2008,1,1), ed=datetime.datetime(2009,1,1),sym=['GOOG','AAPL','GLD','XOM'], gen_plot=False):
-    print 'this', sym
+def optimize_portfolio(df,bench_sym,sv):
+    
     """
     Outputs:
     
@@ -134,17 +129,15 @@ def optimize_portfolio(sd=datetime.datetime(2008,1,1), ed=datetime.datetime(2009
     gen_plot: If True, create a plot named plot.png
     """
     
-    # First get data for the date and symbols
-    dt_range=pd.date_range(sd, ed) # Create series of dates for which the data needs to be obtained
-    
-    df=util.get_data(sym, dt_range); # This gets the adjust close value of the stock for each date and date frame index is date
-    
+        
     # If SPY exists in the df, then drop it (we need SPY to get the dates for all the trading dates)
     # normalized_plot_df=pd.DataFrame(df.SPY/df.SPY[0],index=df.index)
     
-    df=df.drop('SPY',axis=1)
+    full_data=pd.DataFrame(df,index=df.index)
     
-   
+    df=df.drop(bench_sym,axis=1)
+    
+    sym=df.columns; # This is after dropping the SPY
     
     # Here we need to maximize sharpe ratio by fitting the allocs values
     
@@ -162,12 +155,15 @@ def optimize_portfolio(sd=datetime.datetime(2008,1,1), ed=datetime.datetime(2009
     
     optimal_allocs=opt_allocs.x # Gives the optimal solution
     
+    
+    
     # Now given these optimal alloc compute the portfolio
-    cr,adr,sddr,sr,_=access_portfolio(sd=sd,ed=ed,sym=sym,allocs=optimal_allocs,gen_plot=gen_plot)
+    # Send the full_data here it should also include the bench_sym
+    cr,adr,sddr,sr,ev,normalized_plot_df=access_portfolio(full_data,bench_sym,optimal_allocs,sv)
     
     
     
-    return cr, adr, sddr,sr,optimal_allocs
+    return cr, adr, sddr,sr,ev, normalized_plot_df, optimal_allocs
 
 
 
@@ -176,6 +172,7 @@ if __name__=='__main__':
     sd=datetime.datetime(2010,01,01)
     ed=datetime.datetime(2010,12,31)
     
+    '''
     # symbols=['GOOG', 'AAPL', 'GLD', 'XOM'];
     symbols=['AXP', 'HPQ', 'IBM', 'HNZ']
     cr,adr,sddr,sr,optimal_allocs=optimize_portfolio(sd=sd,ed=ed,sym=symbols,gen_plot=True)
@@ -189,4 +186,5 @@ if __name__=='__main__':
     print('Volatility (std of daily returns): {0}'.format(sddr))
     print('Average daily return: {0}'.format(adr))
     print('Cummlative return: {0}'.format(cr))
+    '''
     

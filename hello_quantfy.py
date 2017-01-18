@@ -14,7 +14,7 @@ import pandas as pd
 import datetime as dt
 import util
 import apicall_data
-
+import optimization
 
 # import bokeh
 # print (bokeh.__version__)
@@ -94,6 +94,11 @@ def plot_stock_prices():
         
         if 'adjopen' in request.form: app_quantfy.vars['price_features']['Adj. Open']=request.form['adjopen']
         
+        if 'bench_sym' in request.form: 
+            app_quantfy.vars['bench_sym']=request.form['bench_sym']
+        else:
+            app_quantfy.vars['bench_sym']='SPY'
+        
         # These are the parameters that needs to be computed for each symbol. For this to be computed we need adjusted closing price
         
         if 'rollingmean' in request.form: app_quantfy.vars['compute_features']['RM']=request.form['rollingmean'] 
@@ -122,7 +127,7 @@ def plot_stock_prices():
         symbols=app_quantfy.vars['sym'] # Here symbol will be a list
     
         # Add the benchmark symbol to the symbols
-        symbols.insert(0,'SPY'); # Insert the default symbol in the symbols list
+        symbols.insert(0,app_quantfy.vars['bench_sym']); # Insert the default symbol in the symbols list
         
         usr_price_features=list(app_quantfy.vars['price_features'].keys()) 
         
@@ -151,6 +156,146 @@ def plot_stock_prices():
         
         # Here when the user clicks submit button, the bokeh plot should be displayed
         
+@app_quantfy.route('/portfolio',methods=['GET','POST'])
+def portfolio_page():
+    if request.method=='GET':
+        return render_template('portfolio.html')
+    else:
+        app_quantfy.vars={} # This is a dictionary
+        # Define the variables. This is a local variable, but in Flask it will be passed to the plot route I guess
+        
+        app_quantfy.vars['sym'] = request.form['sym'].upper().strip(';').split(';') # 'sym' should be defined in html file as name
+        
+        if (app_quantfy.vars['sym'][0]=='') :  # sym is a list delimited by ;
+            return render_template('portfolio.html',error_sym='<font size="3" color="red" > Provide at least one ticker symbol </font>') 
+        
+        
+        if len(request.form['start_date'])!=0: # Here start and end date are keys are coming even if they are empty
+            try:
+                app_quantfy.vars['start_date']=dt.datetime.strptime(request.form['start_date'],'%m/%d/%Y')
+            except ValueError:
+                return render_template('portfolio.html',error_start_date='<font size="3" color="red" > Wrong date format </font>')
+        else:
+            # Take 5 years ago of the current date
+            app_quantfy.vars['start_date']=dt.datetime.today()-dt.timedelta(days=5*365) # This does not give the accurate 5 years
+        
+        
+        if  len(request.form['end_date'])!=0:
+            try:
+                app_quantfy.vars['end_date']=dt.datetime.strptime(request.form['end_date'],'%m/%d/%Y')
+            except ValueError:
+                return render_template('portfolio.html',error_end_date='<font size="3" color="red" > Wrong date format </font>')
+        else:
+            # Take today as the default date
+            app_quantfy.vars['end_date']=dt.datetime.today()
+        
+        #print app_quantfy.vars
+        if 'bench_sym' in request.form: 
+            app_quantfy.vars['bench_sym']=request.form['bench_sym']
+        else:
+            app_quantfy.vars['bench_sym']='SPY'
+        
+        symbols=list(app_quantfy.vars['sym']); # Create a new list as we are doing insert operation next
+        symbols.insert(0,app_quantfy.vars['bench_sym']); # Insert the default symbol in the symbols list
+        
+        # Here just get the data for the 'Adj. Close'
+        full_data=[(sym, apicall_data.get_data_from_quandl(symbol=sym, features=['Adj. Close'], start_dt=app_quantfy.vars['start_date'],end_dt=app_quantfy.vars['end_date'])
+                        ) for sym in symbols]
+        
+        # Convert this to required format
+        
+        df_all_sym=util.get_data(full_data)
+        
+        app_quantfy.vars['guess_alloc']=request.form['guess_alloc'].strip(';').split(';')
+        
+        app_quantfy.vars['start_value']=float(request.form['start_value']); # It has a default value
+        
+        if len(app_quantfy.vars['guess_alloc']) ==0 : 
+            app_quantfy.vars['guess_alloc']=[float(i) for i in app_quantfy.vars['guess_alloc']]
+            try:
+                assert len(app_quantfy.vars['guess_alloc'])==len(app_quantfy.vars['sym'])
+            except AssertionError:
+                return render_template('portfolio.html',error_alloc='<font size="3" color="red" > Number of allocations should be same as symbols   </font>')
+            # Sum should be equal to one
+            try:
+                assert sum(app_quantfy.vars['guess_alloc'])==1.0
+            except AssertionError:
+                return render_template('portfolio.html',error_alloc='<font size="3" color="red" > Sum should be 1   </font>')
+
+            
+        else:
+            # Generate random numbers
+            allocs=np.random.random(len(app_quantfy.vars['sym']))
+            allocs /=allocs.sum()
+            app_quantfy.vars['guess_alloc']=allocs
+            #print allocs
+        
+        cr,adr,sddr,sr,ev,normalized_plot_df=optimization.access_portfolio(df_all_sym, app_quantfy.vars['bench_sym'], 
+                                                                           app_quantfy.vars['guess_alloc'],
+                                                                           sv=app_quantfy.vars['start_value'])
+        
+        #print cr,adr,sddr,sr,ev
+        
+        param_not_opt=pd.DataFrame([cr,adr,sddr,sr,ev],index=['CR','ADR','STDDR','SR','EV'], columns=['Unoptimized'])
+        
+        #print normalized_plot_df.head()
+        
+        TOOLS='pan,wheel_zoom,box_zoom,reset,save,box_select'
+        not_opt_p = figure(width=600, height=300, x_axis_type="datetime",tools=TOOLS)
+        
+        colors=['blue','red','green','#cc3300']
+        
+        for (i,ftr) in enumerate(normalized_plot_df):
+            not_opt_p.line(normalized_plot_df.index,normalized_plot_df[ftr],legend=ftr,color=colors[i])
+        
+        #not_opt_p.line(normalized_plot_df)
+        
+        not_opt_p.title.text = "Un optimized portfolio value"
+        not_opt_p.legend.location = "top_left"
+        not_opt_p.grid.grid_line_alpha=0
+        not_opt_p.xaxis.axis_label = 'Date'
+        not_opt_p.yaxis.axis_label = 'Relative portfolio value'
+        not_opt_p.ygrid.band_fill_color="olive"
+        not_opt_p.ygrid.band_fill_alpha = 0.1
+        
+        script_not_opt, div_not_opt=components(not_opt_p)
+        
+        # print script_not_opt,div_not_opt
+        # Now run optimized
+        
+        cr,adr,sddr,sr,ev,normalized_plot_df,optimal_alloc=optimization.optimize_portfolio(df_all_sym,app_quantfy.vars['bench_sym'],
+                                                                             app_quantfy.vars['start_value'])
+        
+        
+        print cr,adr,sddr,sr,ev,optimal_alloc
+        
+        print normalized_plot_df.head()
+        
+        opt_p = figure(width=600, height=300, x_axis_type="datetime",tools=TOOLS)
+              
+        for (i,ftr) in enumerate(normalized_plot_df):
+            opt_p.line(normalized_plot_df.index,normalized_plot_df[ftr],legend=ftr,color=colors[i])
+        
+        #not_opt_p.line(normalized_plot_df)
+        
+        opt_p.title.text = "Optimized portfolio value"
+        opt_p.legend.location = "top_left"
+        opt_p.grid.grid_line_alpha=0
+        opt_p.xaxis.axis_label = 'Date'
+        opt_p.yaxis.axis_label = 'Relative portfolio value'
+        opt_p.ygrid.band_fill_color="olive"
+        opt_p.ygrid.band_fill_alpha = 0.1
+        
+        script_opt, div_opt=components(opt_p)
+        
+        param_opt=pd.DataFrame([cr,adr,sddr,sr,ev],index=['CR','ADR','STDDR','SR','EV'], columns=['Optimized'])
+        
+        str_opt_alloc='Optimal allocations: '+', '.join([str(i) for i in optimal_alloc])
+        
+        return render_template('portfolio.html',not_opt=param_not_opt.to_html(),opt=param_opt.to_html(), opt_alloc=str_opt_alloc,
+                               script_not_opt=script_not_opt,plot_not_opt=div_not_opt, 
+                               script_opt=script_opt,plot_opt=div_opt
+                               )
     
      
     
@@ -174,8 +319,6 @@ def plot_symbols(list_data_tuples,usr_price_features,data_src):
             #print usr_price_features, features,tpl[0]
             
             plot_price_features=list(set(usr_price_features).intersection(set(features)))
-            
-            
             
             df=full_df[plot_price_features]
             
@@ -215,7 +358,7 @@ def plot_symbols(list_data_tuples,usr_price_features,data_src):
     
     #print script_el_data, div_el_data       
     if len(list_plots)!=0:
-        script_el_data, div_el_data=components(gridplot(list_plots,ncols=len(list_plots), plot_width=400, plot_height=400))
+        script_el_data, div_el_data=components(gridplot(list_plots,ncols=2, plot_width=600, plot_height=400,tools=TOOLS))
     else:
         script_el_data=''
         div_el_data=''
@@ -248,12 +391,11 @@ def compute_params(list_data_tuples):
 
 def plot_params(list_data_tuples):
     
-    script_el_param=''
-    div_el_param='<h4> Time-series plot for computed parameters <table style="width 50%">  <tr>'
+    #script_el_param=''
+    #div_el_param='<h4> Time-series plot for computed parameters <table style="width 50%">  <tr>'
     
-   
-    
-    
+    list_plots=[]
+       
       
     # Here we need to compute the following:
     # (1) Daily returns (2)  Rolling standard deviation (3) Bollinger bands (4) Rolling std
@@ -299,15 +441,22 @@ def plot_params(list_data_tuples):
         p.ygrid.band_fill_alpha = 0.1
     
         # Here I need to get the javascript for the plot and put it in the plot_features.html  (boilerplate) template
-        plt_script,plt_div=components(p) # script and div needs to be inserted in the plot_features.html
+        #plt_script,plt_div=components(p) # script and div needs to be inserted in the plot_features.html
         
-        script_el_param+=plt_script; # This will be java script data element this need not be in a table form
+        #script_el_param+=plt_script; # This will be java script data element this need not be in a table form
         
-        div_el_param+='<td>'+plt_div+'</td>'
-
+        #div_el_param+='<td>'+plt_div+'</td>'
+        
+        list_plots.append(p)
     
+    if len(list_plots)!=0:
+        script_el_param, div_el_param=components(gridplot(list_plots,ncols=2, plot_width=600, plot_height=400,tools=TOOLS))
+    else:
+        script_el_param=''
+        div_el_param=''
     
     return script_el_param, div_el_param
+
 
 
 
@@ -321,9 +470,7 @@ def err():
 def error_symbol():
     return render_template('symbol_error.html')
 
-@app_quantfy.route('/portfolio',methods=['GET','POST'])
-def portfolio_page():
-    return render_template('portfolio.html')
+
 
 @app_quantfy.route('/invest_trade',methods=['GET','POST'])
 def trading_page():
