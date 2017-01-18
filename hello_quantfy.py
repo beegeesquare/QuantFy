@@ -8,6 +8,7 @@ from bokeh.io import output_file
 from bokeh.embed import components
 from bokeh.palettes import Spectral11
 from bokeh.charts import Line,Area
+from bokeh.layouts import gridplot
 
 import pandas as pd
 import datetime as dt
@@ -160,8 +161,9 @@ def plot_symbols(list_data_tuples,usr_price_features,data_src):
     This function returns the div element of all symbols, for given features.
     So this div element contains plots==len(symbols), 
     """
-    script_el_data=''
-    div_el_data='<h4> Time-series plot for all symbols with chosen features </h4><table style="width 50%"> <tr>'
+    #script_el_data=''
+    #div_el_data='<h4> Time-series plot for all symbols with chosen features </h4><table style="width 50%"> <tr>'
+    list_plots=[]
     for tpl in list_data_tuples:
         
         if 'error' not in tpl[1]:
@@ -195,23 +197,29 @@ def plot_symbols(list_data_tuples,usr_price_features,data_src):
             p.ygrid.band_fill_color="olive"
             p.ygrid.band_fill_alpha = 0.1
             
+            list_plots.append(p)
             # Here I need to get the javascript for the plot and put it in the plot_features.html  (boilerplate) template
-            plt_script,plt_div=components(p) # script and div needs to be inserted in the plot_features.html
+            #plt_script,plt_div=components(p) # script and div needs to be inserted in the plot_features.html
             
-            script_el_data+=plt_script; # This will be java script data element this need not be in a table form
+            #script_el_data+=plt_script; # This will be java script data element this need not be in a table form
             
-            div_el_data+='<td>'+plt_div+'</td>'
+            #div_el_data+='<td>'+plt_div+'</td>'
             #print (plt_script)
             #print (plt_div)
         else:
             print tpl[0]
             
-            div_el_data+='<td>'+'Ticker symbol %s not found in the database'%(tpl[0])+'</td>'
+            #div_el_data+='<td>'+'Ticker symbol %s not found in the database'%(tpl[0])+'</td>'
 
-    div_el_data+='</tr></table>'
+    #div_el_data+='</tr></table>'
     
     #print script_el_data, div_el_data       
-
+    if len(list_plots)!=0:
+        script_el_data, div_el_data=components(gridplot(list_plots,ncols=len(list_plots), plot_width=400, plot_height=400))
+    else:
+        script_el_data=''
+        div_el_data=''
+    
     
     return script_el_data, div_el_data
 
