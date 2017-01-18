@@ -8,3 +8,4 @@ gunicorn>=19.3.0
 oauth>=1.0.1
 oauthlib>=2.0.1
 quandl
+scipy>=0.18.1
