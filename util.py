@@ -8,6 +8,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import apicall_data
 from copy import deepcopy
+import datetime as dt
+
 
 
 def symbol_to_path(symbol, base_dir="data"):
@@ -28,23 +30,27 @@ def symbol_to_path(symbol, base_dir="data"):
     return os.path.join(base_dir, "{}.csv".format(str(symbol)))
 
 
-def get_data(syms, dates):
-    """Read stock data (adjusted close) for given symbols from CSV files."""
-    df = pd.DataFrame(index=dates)
-    # As we are changing the list here the insert operation changes the arugment that is passed
-    # make a copy to avoid it
-    symbols=deepcopy(syms)
-    if 'SPY' not in symbols:  # add SPY for reference, if absent
-        symbols.insert(0, 'SPY')
-
-    for symbol in symbols:
-        df_temp = pd.read_csv(symbol_to_path(symbol), index_col='Date',
-                parse_dates=True, usecols=['Date', 'Adj Close'], na_values=['nan'])
-        df_temp = df_temp.rename(columns={'Adj Close': symbol})
+def get_data(list_data_tuples):
+    """Read stock data (adjusted close) for given symbols """
+    
+       
+    benchmark_symbol=list_data_tuples[0][0]; # First element is the benchmark symbol
+    
+    #print benchmark_symbol
+    
+    df=pd.DataFrame(index=list_data_tuples[0][1]['data'].index) # First dataframe index is nothing but date
+    
+    for tpl in list_data_tuples:
+        #print tpl[0]
+        df_temp = pd.DataFrame(tpl[1]['data']['Adj. Close'],index=tpl[1]['data'].index)
+        df_temp = df_temp.rename(columns={'Adj. Close': tpl[0]}) # tpl[0] is the symbol
+        #print df_temp,tpl[0]
         df = df.join(df_temp)
-        if symbol == 'SPY':  # drop dates SPY did not trade
-            df = df.dropna(subset=["SPY"])
+        if tpl[0] == benchmark_symbol:  # drop dates SPY did not trade
+            df = df.dropna(subset=[benchmark_symbol])
 
+    #print df.head(10)
+    
     return df
 def plot_data(df, title="Stock prices",y_label='Price'):
     """Plot stock prices with a custom title and meaningful axis labels."""
@@ -59,16 +65,29 @@ def plot_data(df, title="Stock prices",y_label='Price'):
     plt.savefig('plots/price_vs_date_.png')
 
 
-def get_rolling_mean(values, window):
+def get_rolling_mean(df, window):
     """Return rolling mean of given values, using specified window size."""
     # return pd.rolling_mean(values, window=window)
-    return pd.Series.rolling(values,window=window).mean()
+    rolling_df=pd.DataFrame(index=df.index)
+    for sym in df.columns:
+        df_tmp= pd.Series.rolling(df[sym],window=window).mean().to_frame() # to_frame converts series to a data frame
+        rolling_df=rolling_df.join(df_tmp)
+        
+    return rolling_df
+    #return pd.Series.rolling(values,window=window).mean()
 
 
-def get_rolling_std(values, window):
+def get_rolling_std(df, window):
     """Return rolling standard deviation of given values, using specified window size."""
+    rolling_df=pd.DataFrame(index=df.index)
+    
+    for sym in df.columns:
+        df_tmp= pd.Series.rolling(df[sym],window=window).std().to_frame() # to_frame converts series to a data frame
+        rolling_df=rolling_df.join(df_tmp)
+    
     # return pd.rolling_std(values,window=window) # Older version of pandas
-    return pd.Series.rolling(values,window=window).std()
+    # return pd.Series.rolling(values,window=window).std()
+    return  rolling_df
 
 def get_bollinger_bands(rm, rstd):
     """Return upper and lower Bollinger Bands."""
@@ -110,12 +129,19 @@ def sharpe_ratio(adr,sddr,sf=252,rfr=0.0,):
     """ Computes the sharpe ratio"""
     return sf**(1.0/2)*(adr-rfr)/sddr
 
+
+def requested_params():
+    return
+
 if __name__=='__main__':
-    # Define a date range
-    dates = pd.date_range('1999-01-01', '2016-11-10')
+    symbols=['SPY','GOOG']
+    full_data=[(sym, apicall_data.get_data_from_quandl(sym, start_dt=dt.datetime.today()-dt.timedelta(days=5*365),
+                                                       end_dt=dt.datetime.today())
+                        ) for sym in symbols]
     
-    symbols =['GOOG', 'AAPL', 'GLD', 'XOM']
-    df=get_data(symbols,dates)
-    plot_data(df)
-    
-        
+    df=get_data(full_data)   
+    rm=get_rolling_mean(df,window=20)
+    rstd=get_rolling_std(df, window=20)
+    u_band,l_band=get_bollinger_bands(rm,rstd)
+    #print u_band.columns
+    #print l_band.columns
