@@ -1,17 +1,80 @@
 """
-This makes call to the quandl database to get the data
+This makes call to the quandl/yahoo database to get the data
 @author Bala Bathula
 """
 
 import os
+import quandl
+import datetime as dt
+import pandas as pd
 
-
-def get_data_from_quandl(symbol, base_dir='../data'):
+def get_data_from_quandl(symbol,features=['Close','Adj. Close','Open','Adj. Open'],start_dt=dt.datetime(2000,1,1),end_dt=dt.datetime.today()):
     """
     Gets the required data for the given symbol from quandl and store it as the csv file
     Store the file name as : {SYMBOL.csv}. This has some problems
     """
-    import quandl
+    
+    
+    quandl.ApiConfig.api_key = "MKXxiRmCQyr6ysZ5Qd2x"
+    # For SPY use Yahoo instead of WIKI, but it will only give (Open, High,close, adjusted close, volume)
+    if symbol=='SPY':
+        
+        dataframe=quandl.get('YAHOO/INDEX_SPY',start_date=start_dt.strftime('%Y-%m-%d'),
+                             end_date=end_dt.strftime('%Y-%m-%d')) # This will be a pandas dataframe
+        # Rename Adjusted Close to Adj_Close...I think
+        dataframe=dataframe.rename(columns={'Adjusted Close':'Adj. Close'})
+        data_source='YAHOO'
+        # Return the dataframe only with the entries requested and remove the ones that are not present in YAHOO database
+        df=pd.DataFrame(index=dataframe.index) # Create an empty dataframe with indices being dates
+        
+        used_features=[]; # If the user selects the features that are not part of YAHOO data set
+        for ftrs in features:
+            try:
+                df=df.join(dataframe[ftrs])
+                used_features.append(ftrs)
+            except KeyError:
+                pass
+                #removed_features.append(ftrs) # Returns the features to the plot that are not found in dataset
+                
+        #for rm in removed_features: features.remove(rm)
+        
+        if len(used_features)==0:
+            data_dict={'error':'Symbol/features not found'}
+            return data_dict
+        else:
+            data_dict={'data':df,'features':used_features,'src':data_source}
+            return data_dict
+    else:
+        #
+        # WIKI database has 13 columns (Open,High,Low,Close,Volume, Ex-Dividend, Split Ratio,  Adj. Open,  Adj. High,  Adj. Low,  Adj. Close, Adj. Volume)
+        try:
+            dataframe=quandl.get('WIKI/%s'%(symbol),start_date=start_dt.strftime('%Y-%m-%d'),
+                                 end_date=end_dt.strftime('%Y-%m-%d')) # This will be a pandas dataframe
+            
+            features=list(features); # Creates a new copy
+            
+            # Return the dataframe only with the entries requested
+            # Quandl data frame already indexes to date (no need for any other change)
+            df=pd.DataFrame(index=dataframe.index) # Create an empty dataframe with indices being dates
+            
+            for ftrs in features:
+                df=df.join(dataframe[ftrs])
+            
+            data_source='WIKI'
+            data_dict={'data':df,'features':features,'src':data_source}
+            # return df,features,data_source,error_status
+            
+            return data_dict
+        except quandl.errors.quandl_error.NotFoundError:
+            data_dict={'error':'Symbol not found'}
+            return data_dict
+
+def get_data_from_quandl_old(symbol, base_dir='../data'):
+    """
+    Gets the required data for the given symbol from quandl and store it as the csv file
+    Store the file name as : {SYMBOL.csv}. This has some problems
+    """
+    
     quandl.ApiConfig.api_key = "MKXxiRmCQyr6ysZ5Qd2x"
     if symbol=='SPY':
         dataframe=quandl.get('YAHOO/INDEX_SPY') # This will be a pandas dataframe

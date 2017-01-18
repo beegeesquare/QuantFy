@@ -1,22 +1,47 @@
 <!doctype html>
 <title> QuantFy </title>
+<style>
+a:link {
+    color: green;
+    background-color: transparent;
+    text-decoration: none;
+}
+a:visited {
+    color: pink;
+    background-color: transparent;
+    text-decoration: none;
+}
+a:hover {
+    color: red;
+    background-color: transparent;
+    text-decoration: underline;
+}
+a:active {
+    color: yellow;
+    background-color: transparent;
+    text-decoration: underline;
+}
+
+
+
+
+</style>
+
 <div class=page>
-	<h1> Plot the desired stock features </h1>
+	<h1> QuantFy: Market predictor using Machine Learning </h1>
+  <h5> Make every penny worth !</h5>
+  <h2> This is very beginning of the web-application </h2>
 	<div class=metanav>
+  <h4>
+    Stock price comparison time-series plot: <a href="/price_plot" target="_blank"> Time-series plot </a> 
+  </h4>
 	<h4>
-		Please enter a stock ticker eg. GOOG, and check desired features.
-	</h4>
-	<form id='tickersymform' method='post' action='index' >
-      <p>
-    Ticker Symbol: <input type='text' name='sym' />
-      </p>
-    <input id="cp" type="checkbox" name="closeprice"> Closing price <br>
-    <input id="acp" type="checkbox" name="adjclose"> Adjusted closing price <br>
-    <input id="op" type="checkbox" name="openprice"> Opening price <br>
-    <input id="aop" type="checkbox" name="adjopen"> Adjusted Opening price <br>
-    <input type='submit' value='Submit' />
-      </p>
-    </form>
+		Optimize your portfolio: <a href="/portfolio" target="_blank"> Portfolio optimizer </a> 
+  </h4>
+  <h4> 
+    Stocks and trading: <a href="/invest_trade" target="_blank"> Trading </a> 
+  </h4>
+	
 
 
 	</div>
