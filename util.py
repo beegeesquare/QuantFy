@@ -5,29 +5,10 @@ These are some utility functions used for the first project in ML-Trading
 
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
 import apicall_data
 from copy import deepcopy
 import datetime as dt
 
-
-
-def symbol_to_path(symbol, base_dir="data"):
-    """Return CSV file path given ticker symbol."""
-    # Check if the data exists for the given symbol.  If not, then fetch it from the quandl database and save it to the base folder
-    
-    if os.path.isdir(base_dir)==False:
-        #print ('making the directory')
-        os.mkdir('data')
-    
-    if os.path.isfile(os.path.join(base_dir,"{}.csv".format(str(symbol)))):
-        print('Data for symbol {0} exists'.format(str(symbol)));
-    else:
-        # Make an api call to the quandl database
-        apicall_data.get_data_from_yahoo2(symbol, base_dir);
-        print('Data copied to the local directory'.format(str(symbol)));
-    
-    return os.path.join(base_dir, "{}.csv".format(str(symbol)))
 
 
 def get_data(list_data_tuples):
@@ -52,17 +33,6 @@ def get_data(list_data_tuples):
     #print df.head(10)
     
     return df
-def plot_data(df, title="Stock prices",y_label='Price'):
-    """Plot stock prices with a custom title and meaningful axis labels."""
-    if os.path.isdir('plots')==False:
-        os.mkdir('plots')
-        
-    plt.style.use('ggplot')
-    ax = df.plot(title=title, fontsize=12)
-    ax.set_xlabel("Date")
-    ax.set_ylabel(y_label)
-    plt.show()
-    plt.savefig('plots/price_vs_date_.png')
 
 
 def get_rolling_mean(df, window):
