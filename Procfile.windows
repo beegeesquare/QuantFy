@@ -1,1 +1,1 @@
-web: python hello_quantfy.py 
+web: python quantfy.py 
