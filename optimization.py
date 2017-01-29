@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import scipy.optimize as spo
 
+
 def sharpe_function(allocs,df,sv=1000000,sf=252.0,rfr=0.0):
     """Takes the allocations and computes the sharpe ratio"""
    

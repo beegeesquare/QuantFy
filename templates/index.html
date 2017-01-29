@@ -1,52 +1,126 @@
-<!doctype html>
-<title> QuantFy </title>
-<style>
-a:link {
-    color: green;
-    background-color: transparent;
-    text-decoration: none;
-}
-a:visited {
-    color: pink;
-    background-color: transparent;
-    text-decoration: none;
-}
-a:hover {
-    color: red;
-    background-color: transparent;
-    text-decoration: underline;
-}
-a:active {
-    color: yellow;
-    background-color: transparent;
-    text-decoration: underline;
-}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, shrink-to-fit=no, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>QuantFy - Make every penny worth </title>
+
+    <!-- Bootstrap Core CSS -->
+    <link href="{{ url_for('static',filename='css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static',filename='css/simple-sidebar.css') }}" rel="stylesheet">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+</head>
+
+<body>
+
+    <div id="wrapper">
+
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <ul class="sidebar-nav">
+                <li class="sidebar-brand">
+                    <a href="/index">
+                        <p> QuantFy &copy; </p>
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="/price_plot" target="_blank">Stock prices (Time-series plot) </a>
+                </li>
+                <li>
+                    <a hhref="/portfolio" target="_blank">Portfolio Optimization</a>
+                </li>
+                <li>
+                    <a href="#">Stocks and Trading</a>
+                </li>
+                <li>
+                    <a href="#">About</a>
+                </li>
+                
+                <li>
+                    <a href="#">Contact</a>
+                </li>
+
+                <li>
+                    <a href="/price_plot_interactive"> Beta version (Visual Plot 1)</a>
+
+                </li>
+                <li>
+                    <a href="#"> Beta version (Visual Plot 2)</a>
+                    
+                </li>
+                <li>
+                    <a href="#"> Beta version (Visual Plot 3)</a>
+                    
+                </li>
 
 
+            </ul>
+        </div>
+        <!-- /#sidebar-wrapper -->
 
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <h1>QuantFy: Market predictor using Machine Learning</h1>
+                        <h3> Welcome to QuantFy ! </h3>
+                        <p> Investment firms, hedge funds and even individuals have been using financial models 
+                            to better understand market behavior and make profitable investments and trades. To
+                            maximize return of investment these firms use large amounts of historical data and
+                            apply machine learning algorithms to the process. QuantFy is an application (app)
+                            that would build predictive/optimized models using machine learning models such k-
+                            nearest neighbour, Q-learning (reinforcement learning).</p>
+                        <h3>Problem Statement </h3>
+                        <p> Using the historical data for prices and performance statistics as features, we can get predicted future price of the stock. For instance we can set of performance statistics (such as Bollinger bands &copy;, price-to-earning (P/E) ratio) as features of the present date mapped to price (say one week forecast which is an input) of price. This creates a data set < X; Y >, where X is the set of features and Y as trading days. Features used are the measurable
+                        quantities that a particular stock could use in the predicting things such as change in price, market relative change in price or simply future stock price. Few questions that one would ask, before getting started are:
+                        <ol>
+                        <li>  Breath and depth of data: How much historical data one would like to consider? </li>
+                        <li> What ticker symbols are you going to use? </li>
+                        </p>
+                        </ol>
+                        <br>
+                        <br>
+                        <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Menu</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /#page-content-wrapper -->
 
-</style>
+    </div>
+    <!-- /#wrapper -->
 
-<div class=page>
-	<h1> QuantFy: Market predictor using Machine Learning </h1>
-  <h5> Make every penny worth !</h5>
-  <h2> This is very beginning of the web-application </h2>
-	<div class=metanav>
-  <h4>
-    Stock price comparison time-series plot: <a href="/price_plot" target="_blank"> Time-series plot </a> 
-  </h4>
-	<h4>
-		Optimize your portfolio: <a href="/portfolio" target="_blank"> Portfolio optimizer </a> 
-  </h4>
-  <h4> 
-    Stocks and trading: <a href="/invest_trade" target="_blank"> Trading </a> 
-  </h4>
-  
-  <h4> 
-    Test page for prices: <a href="/index_test" target="_blank"> Test prices </a> 
-  </h4>	
+    <!-- jQuery -->
+    <script src="/static/js/jquery.js"></script>
 
+    <!-- Bootstrap Core JavaScript -->
+    <script src="/static/js/bootstrap.min.js"></script>
 
-	</div>
-</div>
+    <!-- Menu Toggle Script -->
+    <script>
+    $("#menu-toggle").click(function(e) {
+        e.preventDefault();
+        $("#wrapper").toggleClass("toggled");
+    });
+    </script>
+
+</body>
+
 </html>

@@ -16,12 +16,17 @@ import util
 import apicall_data
 import optimization
 
+
+import price_plot_dynamic
+from price_plot_dynamic import plot_stock_prices_2
+
+
 # import bokeh
 # print (bokeh.__version__)
 
 app_quantfy=Flask(__name__)
 
-
+app_quantfy.register_blueprint(plot_stock_prices_2)
 
 
 
@@ -176,8 +181,8 @@ def portfolio_page():
             except ValueError:
                 return render_template('portfolio.html',error_start_date='<font size="3" color="red" > Wrong date format </font>')
         else:
-            # Take 5 years ago of the current date
-            app_quantfy.vars['start_date']=dt.datetime.today()-dt.timedelta(days=5*365) # This does not give the accurate 5 years
+            # Take 1 years ago of the current date
+            app_quantfy.vars['start_date']=dt.datetime.today()-dt.timedelta(days=365) # This does not give the accurate 5 years
         
         
         if  len(request.form['end_date'])!=0:
@@ -208,17 +213,23 @@ def portfolio_page():
         
         app_quantfy.vars['guess_alloc']=request.form['guess_alloc'].strip(';').split(';')
         
+        
+        
         app_quantfy.vars['start_value']=float(request.form['start_value']); # It has a default value
         
-        if len(app_quantfy.vars['guess_alloc']) ==0 : 
+        if len(app_quantfy.vars['guess_alloc']) !=0 and (app_quantfy.vars['guess_alloc'][0]!='') : # app_quantfy.vars['guess_alloc'] is a list because of the strip function
+            print app_quantfy.vars['guess_alloc']
+            print len(app_quantfy.vars['guess_alloc'])
             app_quantfy.vars['guess_alloc']=[float(i) for i in app_quantfy.vars['guess_alloc']]
             try:
                 assert len(app_quantfy.vars['guess_alloc'])==len(app_quantfy.vars['sym'])
             except AssertionError:
                 return render_template('portfolio.html',error_alloc='<font size="3" color="red" > Number of allocations should be same as symbols   </font>')
             # Sum should be equal to one
+            print app_quantfy.vars['guess_alloc']
+            
             try:
-                assert sum(app_quantfy.vars['guess_alloc'])==1.0
+                assert abs(sum(app_quantfy.vars['guess_alloc'])-1.0)<=1e-5 # Sometimes the rounding does not work correctly
             except AssertionError:
                 return render_template('portfolio.html',error_alloc='<font size="3" color="red" > Sum should be 1   </font>')
 
@@ -267,9 +278,9 @@ def portfolio_page():
                                                                              app_quantfy.vars['start_value'])
         
         
-        print cr,adr,sddr,sr,ev,optimal_alloc
+        # print cr,adr,sddr,sr,ev,optimal_alloc
         
-        print normalized_plot_df.head()
+        # print normalized_plot_df.head()
         
         opt_p = figure(width=600, height=300, x_axis_type="datetime",tools=TOOLS)
               
@@ -290,9 +301,14 @@ def portfolio_page():
         
         param_opt=pd.DataFrame([cr,adr,sddr,sr,ev],index=['CR','ADR','STDDR','SR','EV'], columns=['Optimized'])
         
-        str_opt_alloc='Optimal allocations: '+', '.join([str(i) for i in optimal_alloc])
+              
+        alloc_df=pd.DataFrame([app_quantfy.vars['guess_alloc'],list(optimal_alloc)],index=['Random/Guess allocations','Optimized allocations'],columns=app_quantfy.vars['sym'])
         
-        return render_template('portfolio.html',not_opt=param_not_opt.to_html(),opt=param_opt.to_html(), opt_alloc=str_opt_alloc,
+        #str_opt_alloc='Optimal allocations: '+', '.join([str(i) for i in optimal_alloc])
+        
+        
+        
+        return render_template('portfolio.html',not_opt=param_not_opt.to_html(),opt=param_opt.to_html(), opt_alloc=alloc_df.to_html(),
                                script_not_opt=script_not_opt,plot_not_opt=div_not_opt, 
                                script_opt=script_opt,plot_opt=div_opt
                                )
@@ -477,146 +493,7 @@ def trading_page():
     return render_template('invest_trade.html')
 
 
-
-@app_quantfy.route('/index_test',methods=['GET','POST'])
-def index_test():
-    if request.method=='GET':
-        return render_template('index_test.html') # This comes when the website address is requested
-    else:
-        
-        # Define the variables. This is a local variable, but in Flask it will be passed to the plot route I guess
-        app_quantfy.vars={} # This is a dictionary
-        app_quantfy.vars['sym'] = request.form['sym'].upper() # 'sym' should be defined in html file as name
-               
-        if 'closeprice' in request.form: 
-            app_quantfy.vars['Close']=request.form['closeprice'] # Keys here should be in the same form that we get from database (like quandl)
-           
-        
-        if 'adjclose' in request.form:  app_quantfy.vars['Adj. Close']=request.form['adjclose']
-        
-        if 'openprice' in request.form: app_quantfy.vars['Open']=request.form['openprice']
-        
-        if 'adjopen' in request.form: app_quantfy.vars['Adj. Open']=request.form['adjopen']
-        
-        
-        
-        if len(app_quantfy.vars.keys())<2 or (app_quantfy.vars['sym']=='') : return redirect('/error') # Symbol cannot be empty
-        
-        # Here when the user clicks submit button, the bokeh plot should be displayed
-        return redirect('/plot_test')
-
-@app_quantfy.route('/plot_test',methods=['GET'])
-def plot_test():
-    #TODO: This has to be the bokeh plot
-    # Using the values selected from the 
-    # print (app_quantfy.vars)
-    symbol=app_quantfy.vars['sym']
-    features=list(app_quantfy.vars.keys()) # First being the symbol
     
-    features.remove('sym')
-    
-    data_dict=get_data_from_quandl_test(symbol=symbol,features=features)
-    
-    if 'error' not in data_dict:
-        df,features,data_src=data_dict['data'],data_dict['features'],data_dict['src']
-    
-        TOOLS='pan,wheel_zoom,box_zoom,reset,save,box_select'
-        p = figure(width=800, height=500, x_axis_type="datetime",tools=TOOLS)
-        colors=['blue','red','green','#cc3300']
-        
-        assert(len(colors)>=len(features))
-        
-        for (i,ftr) in enumerate(features):
-            p.line(df.index,df[ftr],legend=ftr,color=colors[i])
-        
-        p.title.text = "Data for %s from Quandle %s set"%(symbol,data_src)
-        p.legend.location = "top_left"
-        p.grid.grid_line_alpha=0
-        p.xaxis.axis_label = 'Date'
-        p.yaxis.axis_label = 'Price'
-        p.ygrid.band_fill_color="olive"
-        p.ygrid.band_fill_alpha = 0.1
-        
-        # Here I need to get the javascript for the plot and put it in the plot_features.html  (boilerplate) template
-        plt_script,plt_div=components(p) # script and div needs to be inserted in the plot_features.html
-        
-        # print (plt_script)
-        # print (plt_div)
-        
-        
-        # sym, plot_script,  plot_div should be defined in the html file as {{}}
-        return render_template('plot_features_test.html',sym=symbol, plot_script=plt_script,plot_div=plt_div) 
-    
-    else:
-        return redirect('/symbol_error')
-
-
-def get_data_from_quandl_test(symbol,features,start_dt=dt.datetime(2000,1,1),end_dt=dt.datetime.today()):
-    """
-    Gets the required data for the given symbol from quandl and store it as the csv file
-    Store the file name as : {SYMBOL.csv}. This has some problems
-    """
-    
-    import quandl
-    quandl.ApiConfig.api_key = "MKXxiRmCQyr6ysZ5Qd2x"
-    # For SPY use Yahoo instead of WIKI, but it will only give (Open, High,close, adjusted close, volume)
-    if symbol=='SPY':
-        
-        dataframe=quandl.get('YAHOO/INDEX_SPY',start_date=start_dt.strftime('%Y-%m-%d'),
-                             end_date=end_dt.strftime('%Y-%m-%d')) # This will be a pandas dataframe
-        # Rename Adjusted Close to Adj_Close...I think
-        dataframe=dataframe.rename(columns={'Adjusted Close':'Adj. Close'})
-        data_source='YAHOO'
-        # Return the dataframe only with the entries requested and remove the ones that are not present in YAHOO database
-        df=pd.DataFrame(index=dataframe.index) # Create an empty dataframe with indices being dates
-        removed_features=[]; # If the user selects the features that are not part of YAHOO data set
-        for ftrs in features:
-            try:
-                df=df.join(dataframe[ftrs])
-            except KeyError:
-                removed_features.append(ftrs) # Returns the features to the plot that are not found in dataset
-                
-        for rm in removed_features: features.remove(rm)
-        
-        if len(features)==0:
-            data_dict={'error':'Symbol not found'}
-            return data_dict
-        else:
-            data_dict={'data':df,'features':features,'src':data_source}
-            return data_dict
-    else:
-        #
-        # WIKI database has 13 columns (Open,High,Low,Close,Volume, Ex-Dividend, Split Ratio,  Adj. Open,  Adj. High,  Adj. Low,  Adj. Close, Adj. Volume)
-        try:
-            dataframe=quandl.get('WIKI/%s'%(symbol),start_date=start_dt.strftime('%Y-%m-%d'),
-                                 end_date=end_dt.strftime('%Y-%m-%d')) # This will be a pandas dataframe
-            
-            features=list(features); # Creates a new copy
-            
-            # Return the dataframe only with the entries requested
-            # Quandl data frame already indexes to date (no need for any other change)
-            df=pd.DataFrame(index=dataframe.index) # Create an empty dataframe with indices being dates
-            
-            for ftrs in features:
-                df=df.join(dataframe[ftrs])
-            
-            data_source='WIKI'
-            data_dict={'data':df,'features':features,'src':data_source}
-            # return df,features,data_source,error_status
-            
-            return data_dict
-        except quandl.errors.quandl_error.NotFoundError:
-            data_dict={'error':'Symbol not found'}
-            return data_dict
-
-
-
-       
-    
-    
-
-
-
 
 if __name__=='__main__':
     import os
