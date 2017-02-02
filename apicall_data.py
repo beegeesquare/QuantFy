@@ -8,6 +8,12 @@ import quandl
 import datetime as dt
 import pandas as pd
 
+cache_dir='cache'
+if not os.path.exists(cache_dir):
+    os.mkdir(cache_dir)
+
+
+#@checkpoint(key=lambda args, kwargs:'_'.join(map(str, ['-'.join(args[0]),'symbols','-'.join(args[1]),'features','.p'])), work_dir=cache_dir)
 def get_data_from_quandl(symbol,features=['Close','Adj. Close','Open','Adj. Open'],start_dt=dt.datetime(2000,1,1),end_dt=dt.datetime.today()):
     """
     Gets the required data for the given symbol from quandl and store it as the csv file

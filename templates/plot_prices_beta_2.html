@@ -56,7 +56,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>QuantFy: Time-series plots</title>
+    <title>QuantFy</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
@@ -90,7 +90,7 @@
                     <a href="/price_plot">Stock prices (Time-series plot) </a>
                 </li>
                 <li>
-                    <a href="/portfolio" >Portfolio Optimization</a>
+                    <a href="/portfolio">Portfolio Optimization</a>
                 </li>
                <li>
                     <a href="#demo" data-toggle="collapse" class="panel-collapse collapse.in">Stocks and Trading</a>
@@ -133,18 +133,16 @@
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-lg-12">
-                        <h1>QuantFy: Time-series plots for stock prices</h1>
+                        <h1>QuantFy: Beta-version of interactive plots</h1>
                         <p> 
                          Please enter a stock ticker eg. GOOG, and check desired features. Mulitple stock (symbols) are seperated by ; <br></br>
                          Default benchmark comparision is SPY (SP 500 trade).
                          To change the default value, use the respective ticker symbol in the form below
+                         This page is for beta version of interactive visulationzaton plots
                          </p>
                         
-                        <form id='tickersymform' method='post' action='price_plot' >
-                        <h4> Select a Data-source (More to be added):  {{ error_data | safe }}</h4> 
-                        <input type='radio' name='data' id='yahoo_data' value='get_data_yahoo' /> Yahoo Finance (yet to be enabled) {{ error_yahoo | safe }} <br>  <!-- name should be same for all radio buttons -->
-                        <input type='radio' name='data' id='quandl_data' value= 'get_data_quandl' checked/> Quandl <br>
-                        
+                        <form id='tickersymform' method='post' action='price_plot_interactive_2' >
+
                         <table style="width:80%">
                          <tr>
                           <td> <p> Ticker Symbol(s): <input type='text' name='sym' placeholder="GOOG" /> {{ error_sym | safe }}</p> </td>
@@ -153,46 +151,24 @@
                           <td> <p> End date:         <input type='text' name='end_date' id="to" placeholder="MM/DD/YYYY"/> {{ error_end_date | safe }} </p> </td>
                          </tr>
                         </table>
-                        <br>
-                        <table style="width:100%">
-                        <tr> 
-                            <th>  <h4> Price related features <p> {{ error_features | safe }} </p> </h4> </th>
-                            <th> <h4> Select features to be computed (not enabled yet) </h4> </th>
-                            <th> <h4> Computed values </h4> </th>
-                        </tr>   
-                        <tr> <td>  <input id="cp" type="checkbox" name="closeprice"> Closing price <br> 
-                        <input id="acp" type="checkbox" name="adjclose"> Adjusted closing price <br>
-                        <input id="op" type="checkbox" name="openprice"> Opening price <br>
-                        <input id="aop" type="checkbox" name="adjopen"> Adjusted opening price <br> </td>
-                        <td>
-                        <input id="RM" type="checkbox" name="rollingmean"> Rolling mean (RM) <br> 
-                        <input id="RSTD" type="checkbox" name="rollingstd"> Rolling standard deviation (RSTD) <br>
-                        <input id="BOLLBNDS" type="checkbox" name="bollingerbands"> Bollinger bands <br>
-                        <input id="DR" type="checkbox" name="dailyreturns"> Daily returns (DR) <br>
-                        <input id="CDR" type="checkbox" name="cummdailyreturns"> Cummulative daily return (CDR) <br>
-                        <input id="ADR" type="checkbox" name="avgdailyreturns"> Average daily return (CDR) <br>
-                        <input id="STDDR" type="checkbox" name="stddailyreturns"> Standard deviation daily return (STDDR) <br>
-                        <input id="SR" type="checkbox" name="sharperatio"> Sharpe ratio (SR) <br>
-                        </td>
-
-                        <td>
-                            {{ computed_params |safe }}
-                        </td>
-
-
-                        </tr>
-                        </table> 
-                        <input type='submit' class="btn btn-default" value='Submit' />
                         
+                        <h4> Select a Data-source (More to be added):  {{ error_data | safe }}</h4> 
+                        <input type='radio' name='data' id='yahoo_data' value='get_data_yahoo' /> Yahoo Finance (yet to be enabled) {{ error_yahoo | safe }} <br>  <!-- name should be same for all radio buttons -->
+                        <input type='radio' name='data' id='quandl_data' value= 'get_data_quandl' checked /> Quandl <br>
+                        
+                       
+                        <br>
+                        
+                        <input type='submit' class="btn btn-default" value='Submit' />
+                         
                         </form>
 
-                        
+                        <br>
+                        <br>
+                        <br>
 
                         {{ plot_div_symbols | safe }} <!-- this will be a table form, and this will be for all the symbols -->
                         {{ plot_div_features | safe }} <!-- this will be a table form, and this will be for all the features -->
-                        <br>
-                        <br>
-
                                             <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Menu</a>
                                         </div>
                                     </div>
@@ -202,7 +178,6 @@
 
                         </div>
     <!-- /#wrapper -->
-
 
     <!-- Bootstrap Core JavaScript -->
     <script src="/static/js/bootstrap.min.js"></script>

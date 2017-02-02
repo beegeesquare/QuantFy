@@ -44,9 +44,7 @@
     }
   } );
   </script>
-
-{{ script_symbols |safe }}
-{{ script_params | safe }}
+{{ script_port_comp |safe }}
 
 <head>
 
@@ -56,7 +54,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>QuantFy: Time-series plots</title>
+    <title>QuantFy</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
@@ -90,7 +88,7 @@
                     <a href="/price_plot">Stock prices (Time-series plot) </a>
                 </li>
                 <li>
-                    <a href="/portfolio" >Portfolio Optimization</a>
+                    <a href="/portfolio">Portfolio Optimization</a>
                 </li>
                <li>
                     <a href="#demo" data-toggle="collapse" class="panel-collapse collapse.in">Stocks and Trading</a>
@@ -133,67 +131,53 @@
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-lg-12">
-                        <h1>QuantFy: Time-series plots for stock prices</h1>
+                        <h1>QuantFy: Market simulator</h1>
                         <p> 
-                         Please enter a stock ticker eg. GOOG, and check desired features. Mulitple stock (symbols) are seperated by ; <br></br>
-                         Default benchmark comparision is SPY (SP 500 trade).
-                         To change the default value, use the respective ticker symbol in the form below
+                         Market simulator accepts trading orders and keeps track of a portfolio's value over time and then assesses the performance of that portfolio. 
                          </p>
-                        
-                        <form id='tickersymform' method='post' action='price_plot' >
-                        <h4> Select a Data-source (More to be added):  {{ error_data | safe }}</h4> 
-                        <input type='radio' name='data' id='yahoo_data' value='get_data_yahoo' /> Yahoo Finance (yet to be enabled) {{ error_yahoo | safe }} <br>  <!-- name should be same for all radio buttons -->
-                        <input type='radio' name='data' id='quandl_data' value= 'get_data_quandl' checked/> Quandl <br>
-                        
-                        <table style="width:80%">
-                         <tr>
-                          <td> <p> Ticker Symbol(s): <input type='text' name='sym' placeholder="GOOG" /> {{ error_sym | safe }}</p> </td>
-                          <td> <p> Benchmark symbol: <input type='text' name='bench_sym' value='SPY' /> </p> </td> <!-- default value is SP500 -->
-                          <td> <p> Start date:       <input type='text' name='start_date' id="from" placeholder="MM/DD/YYYY" /> {{ error_start_date | safe }} </p></td>
-                          <td> <p> End date:         <input type='text' name='end_date' id="to" placeholder="MM/DD/YYYY"/> {{ error_end_date | safe }} </p> </td>
-                         </tr>
-                        </table>
+                        <p>
+                        Order file is provided as an input CSV file. The files containing orders are CSV files with the following columns:
+                        <ul>
+                         <li> Date (yyyy-mm-dd) </li>
+                         <li> Symbol (e.g. AAPL, GOOG) </li>
+                         <li> Order (BUY or SELL) </li>
+                         <li> Shares (no. of shares to trade) </li>
+                        </ul>
+                        </p>
+                        <p>
+                        For example:
+                        <pre>Date,Symbol,Order,Shares
+2008-12-3,AAPL,BUY,130
+2008-12-8,AAPL,SELL,130
+2008-12-5,IBM,BUY,50</pre>
+                        <form method=post enctype=multipart/form-data > <!-- this is just to upload -->
+                        <p><input type=file name=file class="btn btn-default">
                         <br>
-                        <table style="width:100%">
-                        <tr> 
-                            <th>  <h4> Price related features <p> {{ error_features | safe }} </p> </h4> </th>
-                            <th> <h4> Select features to be computed (not enabled yet) </h4> </th>
-                            <th> <h4> Computed values </h4> </th>
-                        </tr>   
-                        <tr> <td>  <input id="cp" type="checkbox" name="closeprice"> Closing price <br> 
-                        <input id="acp" type="checkbox" name="adjclose"> Adjusted closing price <br>
-                        <input id="op" type="checkbox" name="openprice"> Opening price <br>
-                        <input id="aop" type="checkbox" name="adjopen"> Adjusted opening price <br> </td>
-                        <td>
-                        <input id="RM" type="checkbox" name="rollingmean"> Rolling mean (RM) <br> 
-                        <input id="RSTD" type="checkbox" name="rollingstd"> Rolling standard deviation (RSTD) <br>
-                        <input id="BOLLBNDS" type="checkbox" name="bollingerbands"> Bollinger bands <br>
-                        <input id="DR" type="checkbox" name="dailyreturns"> Daily returns (DR) <br>
-                        <input id="CDR" type="checkbox" name="cummdailyreturns"> Cummulative daily return (CDR) <br>
-                        <input id="ADR" type="checkbox" name="avgdailyreturns"> Average daily return (CDR) <br>
-                        <input id="STDDR" type="checkbox" name="stddailyreturns"> Standard deviation daily return (STDDR) <br>
-                        <input id="SR" type="checkbox" name="sharperatio"> Sharpe ratio (SR) <br>
-                        </td>
-
-                        <td>
-                            {{ computed_params |safe }}
-                        </td>
-
-
-                        </tr>
-                        </table> 
-                        <input type='submit' class="btn btn-default" value='Submit' />
-                        
+                           <input type=submit value=Upload class="btn btn-default">
+                           {{ upload_success |safe}}
+                           <br>
+                       
                         </form>
-
                         
-
-                        {{ plot_div_symbols | safe }} <!-- this will be a table form, and this will be for all the symbols -->
-                        {{ plot_div_features | safe }} <!-- this will be a table form, and this will be for all the features -->
+                        <form id='evalPort' method='post' action='marketSim' >
+                         <table style="width:80%">
+                         <tr>
+                         <td> <p> Start value of portfolio:  <input type='text' name='start_value' id="sv" value="100000" /> </p> </td>
+                       <td> <p> Leverage threshold:  <input type='text' name='leverage_threhsold' id="sv" value="2.0" /> </p> </td>
+                       <td> <p> Benchmark symbol: <input type='text' name='bench_sym' id="bench_sym" value="SPY" /> </p>
+                       </tr>
+                        </table>
+                         <input type='submit' class="btn btn-default" value='Evaluate portfolio'/> </td>
+                        </form>
+                        <a href='marketSimUpload'>Upload new order file </a>
+                        {{ div_port_comp | safe }}
+                        </p>
+                        
                         <br>
                         <br>
+                        <br>
 
-                                            <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Menu</a>
+                                        <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Menu</a>
                                         </div>
                                     </div>
                                 </div>
@@ -202,7 +186,6 @@
 
                         </div>
     <!-- /#wrapper -->
-
 
     <!-- Bootstrap Core JavaScript -->
     <script src="/static/js/bootstrap.min.js"></script>

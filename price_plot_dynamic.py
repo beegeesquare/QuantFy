@@ -21,8 +21,8 @@ import apicall_data
 
 app_plots=Flask(__name__)
 
-plot_stock_prices_2 = Blueprint('plot_prices_beta_1.html', __name__, template_folder='templates')
-@plot_stock_prices_2.route('/price_plot_interactive',methods=['GET','POST'])
+plot_stock_prices_1 = Blueprint('plot_prices_beta_1.html', __name__, template_folder='templates')
+@plot_stock_prices_1.route('/price_plot_interactive',methods=['GET','POST'])
 def plot_stock_prices_interactive():
     if request.method=='GET':
         return render_template('plot_prices_beta_1.html')
@@ -30,9 +30,17 @@ def plot_stock_prices_interactive():
         
         app_plots.vars={} # This is a dictionary
         # Define the variables. This is a local variable, but in Flask it will be passed to the plot route I guess
+        if 'data' in request.form:
+            app_plots.vars['data_src']=request.form['data']; # This get the data source
+        else:
+           
+            return render_template('plot_prices_beta_1.html',error_data='<font size="3" color="red" > Choose at least one data source </font>') 
+        
         
         app_plots.vars['sym'] = request.form['sym'].upper().strip(';').split(';') # 'sym' should be defined in html file as name
                 
+        if (app_plots.vars['sym'][0]=='') :  # sym is a list delimited by ;
+            return render_template('plot_prices_beta_1.html',error_sym='<font size="3" color="red" > Provide at least one ticker symbol </font>') 
         
         #print request.form
         
@@ -63,12 +71,8 @@ def plot_stock_prices_interactive():
         
         symbols=app_plots.vars['sym'] # Here symbol will be a list
         
-        print request.form
-        if 'data' in request.form:
-            app_plots.vars['data_src']=request.form['data']; # This get the data source
-        else:
-           
-            return render_template('plot_prices_beta_1.html',error_data='<font size="3" color="red" > Choose at least one data source </font>') 
+        # print request.form
+        
 
     
         # Add the benchmark symbol to the symbols

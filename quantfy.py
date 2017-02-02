@@ -17,17 +17,19 @@ import apicall_data
 import optimization
 
 
-import price_plot_dynamic
-from price_plot_dynamic import plot_stock_prices_2
 
+from price_plot_dynamic import plot_stock_prices_1
+from price_plot_dynamic_2 import plot_stock_prices_2
+from martket_simulator import marketSim
 
 # import bokeh
 # print (bokeh.__version__)
 
 app_quantfy=Flask(__name__)
 
+app_quantfy.register_blueprint(plot_stock_prices_1)
 app_quantfy.register_blueprint(plot_stock_prices_2)
-
+app_quantfy.register_blueprint(marketSim)
 
 
 @app_quantfy.route('/welcome_page_quantfy')
@@ -497,8 +499,18 @@ def trading_page():
 
 if __name__=='__main__':
     import os
+    
     port=int(os.environ.get("PORT",5000)) # This is for heroku app to run I guess
     app_quantfy.run(host='0.0.0.0',debug=True,port=port)
+    
+    
+    
+    #http_server = HTTPServer(WSGIContainer(app_quantfy))
+    #http_server.listen(5000)
+
+    #io_loop.add_callback(view, "http://127.0.0.1:5000/")
+    
+    
     # df=get_data_from_quandl(symbol='SPY',features=['Close','Adj. Close','Open','Adj. Open'])
     #print (df.head())
     #print (df.tail())
