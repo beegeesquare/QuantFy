@@ -76,7 +76,7 @@ def get_portVals():
         app_marketsim.vars['leverage_threshold']=float(request.form['leverage_threhsold'])
         app_marketsim.vars['bench_sym']=request.form['bench_sym']
         
-        portvals,all_prices_df=compute_portvals(filename, start_val = app_marketsim.vars['start_value'],
+        portvals,all_prices_df,param_df=compute_portvals(filename, start_val = app_marketsim.vars['start_value'],
                                   leverage_threshold= app_marketsim.vars['leverage_threshold'],
                                   bench_sym=app_marketsim.vars['bench_sym'])
                 
@@ -114,7 +114,8 @@ def get_portVals():
         
         script_port_comp, div_port_comp=components(p)
         
-        return render_template('market_simulator.html',script_port_comp=script_port_comp, div_port_comp=div_port_comp)
+        return render_template('market_simulator.html',script_port_comp=script_port_comp, div_port_comp=div_port_comp,
+                               computed_params=param_df.to_html())
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -244,7 +245,39 @@ def compute_portvals(orders_file, start_val = 1000000,leverage_threshold=2.0,ben
     
     portval=pd.DataFrame(values_df.sum(axis=1),index=values_df.index,columns=['Portval'])
     
-    return portval,all_prices_df
+    param_df=pd.DataFrame(index=['Portval','Benchmark ('+app_marketsim.vars['bench_sym']+')'],columns=['Sharpe ratio','Cumulative Return', 
+                                                                                                       'Standard Deviation','Average Daily Return'])
+    
+    
+    # Compute all the fund parameters:
+    sharpe_ratio,cum_ret,std_daily_ret,avg_daily_ret=compute_indicators(portval['Portval']) # for this function to work, pass only the portval column
+    param_df.ix['Portval']=[sharpe_ratio,cum_ret,std_daily_ret,avg_daily_ret]
+           
+    # Compute benchmark parameters
+    
+    sharpe_ratio_bench,cum_ret_bench,std_daily_ret_bench,avg_daily_ret_bench=compute_indicators(all_prices_df[app_marketsim.vars['bench_sym']])
+    param_df.ix['Benchmark ('+app_marketsim.vars['bench_sym']+')']=[sharpe_ratio_bench,cum_ret_bench,std_daily_ret_bench,avg_daily_ret_bench]
+    
+    #print param_df
+    
+    return portval,all_prices_df,param_df
 
 
-
+def compute_indicators(portvals,sf=252.0,rfr=0.0):
+   
+    # Compute daily returns
+    daily_returns=util.compute_daily_returns(portvals)
+    
+    # compute cumulative daily return for portfolio
+    cr=util.cummulative_return(portvals)
+    
+    # average daily return
+    adr=daily_returns.mean()    
+    
+    # standard deviation of the daily return
+    sddr= daily_returns.std()
+    
+    # Sharpe ratio
+    sr=util.sharpe_ratio(adr, sddr, sf, rfr)
+        
+    return sr,cr,sddr,adr

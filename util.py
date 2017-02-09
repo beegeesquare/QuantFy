@@ -95,8 +95,9 @@ def cummulative_return(df):
     return cumm_daily_return
 
 
-def sharpe_ratio(adr,sddr,sf=252,rfr=0.0,):
+def sharpe_ratio(adr,sddr,sf=252,rfr=0.0):
     """ Computes the sharpe ratio"""
+    rfr=((1.0 + rfr) ** (1/sf)) - 1 # Daily risk free return. This is the shortcut to calculate daily (sf=252) risk free return
     return sf**(1.0/2)*(adr-rfr)/sddr
 
 
