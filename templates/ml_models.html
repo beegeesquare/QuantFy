@@ -56,7 +56,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>QuantFy</title>
+    <title>QuantFy: Machine Learning model</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
@@ -90,7 +90,7 @@
                     <a href="/price_plot">Stock prices (Time-series plot) </a>
                 </li>
                 <li>
-                    <a href="/portfolio">Portfolio Optimization</a>
+                    <a href="/portfolio" >Portfolio Optimization</a>
                 </li>
                <li>
                     <a href="#demo" data-toggle="collapse" class="panel-collapse collapse.in">Stocks and Trading</a>
@@ -133,42 +133,46 @@
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-lg-12">
-                        <h1>QuantFy: Beta-version of interactive plots</h1>
+                        <h1>QuantFy: Machine learning models</h1>
                         <p> 
-                         Please enter a stock ticker eg. GOOG, and check desired features. Mulitple stock (symbols) are seperated by ; <br></br>
-                         Default benchmark comparision is SPY (SP 500 trade).
-                         To change the default value, use the respective ticker symbol in the form below
-                         This page is for beta version of interactive visulationzaton plots
+                         Enter the ticker symbol, for which you want to predict the stock price.
                          </p>
                         
-                        <form id='tickersymform' method='post' action='price_plot_interactive' >
-
+                        <form id='mlParams' method='post' action='mlModels' >
+                        <h4> Select a Data-source (More to be added):  {{ error_data | safe }}</h4> 
+                        <input type='radio' name='data' id='yahoo_data' value='get_data_yahoo' /> Yahoo Finance (yet to be enabled) {{ error_yahoo | safe }} <br>  <!-- name should be same for all radio buttons -->
+                        <input type='radio' name='data' id='quandl_data' value= 'get_data_quandl' checked/> Quandl <br>
+                        
                         <table style="width:80%">
                          <tr>
                           <td> <p> Ticker Symbol(s): <input type='text' name='sym' placeholder="GOOG" /> {{ error_sym | safe }}</p> </td>
-                          <td> <p> Benchmark symbol: <input type='text' name='bench_sym' value='SPY' /> </p> </td> <!-- default value is SP500 -->
-                          <td> <p> Start date:       <input type='text' name='start_date' id="from" placeholder="MM/DD/YYYY" /> {{ error_start_date | safe }} </p></td>
-                          <td> <p> End date:         <input type='text' name='end_date' id="to" placeholder="MM/DD/YYYY"/> {{ error_end_date | safe }} </p> </td>
+                          <td> <p> Machine learning algorithm:  <select name="ml_algo">
+                                                                  <option value="knn_algo">k-Nearest neighbours</option>
+                                                                  <option value="rf_algo">Random Forest Regressor</option>
+                                                                  <option value="lr_algo">Linear Regression</option>
+                                                                  <option value="ridge_algo">Ridge CV</option>
+                                                                </select></p>
+                          <td> <p> Start date (for data):       <input type='text' name='start_date' id="from" placeholder="MM/DD/YYYY" /> {{ error_start_date | safe }} </p></td>
+                          <td> <p> End date (for data):         <input type='text' name='end_date' id="to" placeholder="MM/DD/YYYY"/> {{ error_end_date | safe }} </p> </td>
+                          <td> <p> Window:         <input type='text' name='window' id="win" value=20> </p> </td>
+                          <td> <p> Future (prediction) days:         <input type='text' name='future_days' id="win" value=5> </p> </td>
                          </tr>
                         </table>
-                        
-                        <h4> Select a Data-source (More to be added):  {{ error_data | safe }}</h4> 
-                        <input type='radio' name='data' id='yahoo_data' value='get_data_yahoo' /> Yahoo Finance (yet to be enabled) <br> {{ error_yahoo | safe }} <!-- name should be same for all radio buttons -->
-                        <input type='radio' name='data' id='quandl_data' value= 'get_data_quandl' checked /> Quandl <br>
-                        
-                       
                         <br>
-                        
+                        <table style="width:100%">
+                       
+                        </tr>
+                        </table> 
                         <input type='submit' class="btn btn-default" value='Submit' />
-                         
+                        
                         </form>
 
-                        <br>
+                        
+
+                        
                         <br>
                         <br>
 
-                        {{ plot_div_symbols | safe }} <!-- this will be a table form, and this will be for all the symbols -->
-                        {{ plot_div_features | safe }} <!-- this will be a table form, and this will be for all the features -->
                                             <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Menu</a>
                                         </div>
                                     </div>
@@ -178,6 +182,7 @@
 
                         </div>
     <!-- /#wrapper -->
+
 
     <!-- Bootstrap Core JavaScript -->
     <script src="/static/js/bootstrap.min.js"></script>

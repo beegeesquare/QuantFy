@@ -42,7 +42,11 @@ def get_rolling_mean(df, window):
     for sym in df.columns:
         df_tmp= pd.Series.rolling(df[sym],window=window).mean().to_frame() # to_frame converts series to a data frame
         rolling_df=rolling_df.join(df_tmp)
-        
+    
+    # Update the NaN values which are initial values for the 
+    
+    rolling_df.ix[:window, :] = 0
+    
     return rolling_df
     #return pd.Series.rolling(values,window=window).mean()
 
@@ -57,6 +61,12 @@ def get_rolling_std(df, window):
     
     # return pd.rolling_std(values,window=window) # Older version of pandas
     # return pd.Series.rolling(values,window=window).std()
+    
+    # Update the NaN values which are initial values for the 
+    
+    
+    rolling_df.ix[:window, :] = 0
+    
     return  rolling_df
 
 def get_bollinger_bands(rm, rstd):
@@ -66,6 +76,23 @@ def get_bollinger_bands(rm, rstd):
     lower_band=rm-2*rstd
     return upper_band, lower_band
 
+def compute_normalized_BB(df,rm,rstd,window):
+    """
+    Return the bollinger bands feature (which is the normalized values) so that it will typically provide values between -1.0 and 1.0
+    
+    """
+    normalized_bb=pd.DataFrame(index=df.index)
+    
+    for sym in df.columns:
+        df_tmp= (df[sym] - rm[sym])/(2 * rstd[sym])
+        normalized_bb=normalized_bb.join(df_tmp)
+    
+    # Update the NaN values which are initial values for the 
+    
+    normalized_bb.ix[:window, :] = 0
+    
+    return normalized_bb
+    
 def compute_daily_returns(df):
     """Compute and return the daily return values."""
     # Note: Returned DataFrame must have the same number of rows
@@ -99,6 +126,32 @@ def sharpe_ratio(adr,sddr,sf=252,rfr=0.0):
     """ Computes the sharpe ratio"""
     rfr=((1.0 + rfr) ** (1/sf)) - 1 # Daily risk free return. This is the shortcut to calculate daily (sf=252) risk free return
     return sf**(1.0/2)*(adr-rfr)/sddr
+
+def compute_momentum(df,window):
+    '''
+    Computes the momentum of the stock, which is computed as:
+    momentum[t] = (price[t]/price[t-N]) - 1
+    '''
+    # Initialize the momentum dataframe with df
+    momentum=df.copy()
+    momentum[window:] = (df[window:]/df[:-window].values) - 1
+    momentum.ix[:window, :] = 0
+    
+    return momentum
+
+def compute_volatility(df,window):
+    '''
+    Computes the standard-deviation of the daily return
+    '''
+    
+    daily_returns=compute_daily_returns(df)
+    
+    volatility=get_rolling_std(daily_returns,window)
+    
+    # Put the initial values to zeros,
+    volatility.ix[:window, :] = 0
+    
+    return volatility
 
 
 def requested_params():
