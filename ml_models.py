@@ -168,7 +168,7 @@ def buildEstimator(X_data,Y_data,ml_model):
         
         n_neighbours_cv.fit(X_data,Y_data); # It splits and creates CV sets
         
-        print n_neighbours_cv.grid_scores_
+        print n_neighbours_cv.cv_results_
         print n_neighbours_cv.best_estimator_
 
         # Return the optimal model

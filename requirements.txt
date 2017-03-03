@@ -10,3 +10,4 @@ oauthlib>=2.0.1
 quandl
 scipy>=0.18.1
 ediblepickle
+sklearn==0.18.1
