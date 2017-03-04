@@ -90,7 +90,7 @@ def getMLmodels():
         
         script_el_data, div_el_data=plotPredicted(prices_df, future_df)
         
-        return render_template('ml_models.html', script_el_data=script_el_data,div_el_data=div_el_data)
+        return render_template('ml_models.html', script_el_data=script_el_data,div_el_data=div_el_data,metrics=metrics_df.to_html())
         
 
 def computeFeatures(df,shift=5,window=20):
