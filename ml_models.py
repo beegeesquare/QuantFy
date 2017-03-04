@@ -10,11 +10,11 @@ from bokeh.plotting import figure, show,output_file,ColumnDataSource
 from bokeh.palettes import viridis
 from bokeh.embed import components
 from bokeh.layouts import gridplot
-from bokeh.models import HoverTool
+from bokeh.models import HoverTool, Span, Label
 from bokeh.charts import Area
 
 
-
+import time
 import pandas as pd
 import datetime as dt
 import util
@@ -24,7 +24,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.linear_model import LinearRegression,Ridge
 from sklearn.model_selection import TimeSeriesSplit, GridSearchCV
-
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error,make_scorer
 
 
@@ -69,10 +69,10 @@ def getMLmodels():
             # Take today as the default date
             app_mlModels.vars['end_date']=dt.datetime.today()
 
-        app_mlModels.vars['window']=int(request.form['window'])
+        #app_mlModels.vars['window']=int(request.form['window']) # Default window size is set to 20
         app_mlModels.vars['ml_algo']= request.form['ml_algo']
         app_mlModels.vars['future_days']=int(request.form['future_days'])
-        print request.form
+        #print request.form
         
         full_data=[(sym, apicall_data.get_data_from_quandl(symbol=sym, features=['Adj. Close'], start_dt=app_mlModels.vars['start_date'],
                                                            end_dt=app_mlModels.vars['end_date'])
@@ -84,17 +84,21 @@ def getMLmodels():
         # Drop the bench mark price
         prices_df=prices_df.drop(bench_sym,axis=1)
         
-        computeFeatures(prices_df,app_mlModels.vars['window'],app_mlModels.vars['future_days']) # Prices should technically have one symbol, but also possible that they might have multiple symbols
+        metrics_df,future_df=computeFeatures(prices_df,app_mlModels.vars['future_days']) # Prices should technically have one symbol, but also possible that they might have multiple symbols
         
-        return render_template('ml_models.html')
+        # Plot the time-series graph with past and future values
+        
+        script_el_data, div_el_data=plotPredicted(prices_df, future_df)
+        
+        return render_template('ml_models.html', script_el_data=script_el_data,div_el_data=div_el_data)
         
 
-def computeFeatures(df,window=20,shift=5):
+def computeFeatures(df,shift=5,window=20):
     '''
     This function computes the features that are needed for the machine learning model
     '''
    
-    
+    df=df.fillna(df.mean()) # Fill the NaN values with mean
     
     # Compute the rolling-mean and rolling-std
     rolling_mean=util.get_rolling_mean(df, window)
@@ -112,7 +116,15 @@ def computeFeatures(df,window=20,shift=5):
     
     # All the above computed features could contain multiple symbols
     featureData=defaultdict()
-    # Create train and test sets for each symbol
+    # Metrics dataframe
+    
+    metrics_df=pd.DataFrame(index=['Mean square error','Correlation coff'],columns=df.columns)   
+    future_start_date=df.index[-1]; # Take the last date + 1 as the future first date
+    future_start_date=future_start_date+dt.timedelta(days=1)
+    
+    future_end_date=future_start_date+dt.timedelta(days=shift-1); # -1 because we have already included the first date
+    future_df=pd.DataFrame(columns=df.columns,index=pd.date_range(future_start_date,future_end_date,freq='D'))
+    
     for sym in df.columns:
         X_data=pd.DataFrame(index=df.index)
         
@@ -133,46 +145,118 @@ def computeFeatures(df,window=20,shift=5):
         Y_data[sym].ix[:-shift] = np.array((df[sym].ix[shift:]/df[sym].ix[:-shift].values) - 1); # Here np is choosen, because if dataframe was used then Y_values will not be shifted
         Y_data[sym].ix[-shift:]=0
                        
-        print X_data.tail(),Y_data.tail()
+        # print X_data.tail(),Y_data.tail()
         # For each symbol we need to create a seprate model ()
-        bestEst=buildEstimator(X_data,Y_data,app_mlModels.vars['ml_algo'])
+        #bestEst=buildEstimator(X_data,Y_data,app_mlModels.vars['ml_algo'])
         
-        featureData[sym]=(X_data,Y_data,bestEst)
+        #featureData[sym]=(X_data,Y_data,bestEst)
         
         # Predict the Y for the last sample point, which will give the price for the shift days
         
-        Y_pred_dr=bestEst.predict(X_data.ix[-2*shift:-shift])
-        print Y_pred_dr, Y_data.ix[-2*shift:-shift]
-        print mean_squared_error(Y_data.ix[-2*shift:-shift], Y_pred_dr)
+        #Y_pred_dr=bestEst.predict(X_data.ix[-2*shift:-shift])
+        #print Y_pred_dr, Y_data.ix[-2*shift:-shift]
+        #print mean_squared_error(Y_data.ix[-2*shift:-shift], Y_pred_dr)
         #print np.corrcoef(np.array(Y_pred_dr),np.array(Y_data.ix[-2*shift:-shift])) # I need to reshape Y_pred 
         
         ######
-        bestEst=buildEstimator(X_data.ix[:-shift],Y_data.ix[:-shift],app_mlModels.vars['ml_algo'])
+        # bestEst=buildEstimator(X_data.ix[:-shift],Y_data.ix[:-shift],app_mlModels.vars['ml_algo'])
+        scaler=StandardScaler()
+        Y_scaled=scaler.fit_transform(df[sym].ix[:-shift])
         
-        Y_pred_dr=bestEst.predict(X_data.ix[-shift:])
-        print Y_pred_dr
-        print mean_squared_error(Y_data.ix[-shift:], Y_pred_dr)
+        bestEst=buildEstimator(X_data.ix[:-shift],Y_scaled,app_mlModels.vars['ml_algo'])
         
-    return       
+        Y_pred_dr=bestEst.predict(X_data.ix[-2*shift:-shift]) # This is for computing showing the metrics
+        
+        # Do the inverse-transform
+        Y_pred_dr=scaler.inverse_transform(Y_pred_dr)
+        Y_pred_dr= np.reshape(Y_pred_dr,(len(Y_pred_dr),))
+        
+        tmp_df=np.array(df[sym].ix[-shift:])
+        
+        tmp_df=np.reshape(tmp_df,(tmp_df.shape[0],))
+        
+        mse= mean_squared_error(tmp_df, Y_pred_dr)
+        
+        correlation_mat= np.corrcoef(Y_pred_dr,tmp_df)
+        
+        correction_coff=correlation_mat[0,1]; # This is a symmetrical matrix of size 2 x 2
+        
+        metrics_df.loc['Mean square error',sym]=mse
+        metrics_df.loc['Correlation coff',sym]=correction_coff
+        
+        # Prediction for next "shift" days
+        
+        Y_future=bestEst.predict(X_data.ix[-shift:])
+        # Inverse transform
+        Y_future=scaler.inverse_transform(Y_future)
+        
+        future_df[sym]=np.transpose(Y_future)
+    
+    # print  metrics_df
+    # print future_df
+    return  metrics_df,  future_df    
 
 
 def buildEstimator(X_data,Y_data,ml_model):
     """
     Given the dataset of the symbol (historical), it will return the estimator
     """
+    tscv=TimeSeriesSplit(n_splits=5) # Creates a time-series cross-validation set (creates 3 fold train and test sets, roll forward CV)
     if ml_model=="knn_algo":
-        tscv=TimeSeriesSplit(n_splits=3) # Creates a time-series cross-validation set (creates 3 fold train and test sets)
-        param_grid={'n_neighbors':range(3,15,1)}
+        
+        param_grid={'n_neighbors':range(3,20,1)}
         scorer=make_scorer(mean_squared_error,greater_is_better=False)
         n_neighbours_cv=GridSearchCV(KNeighborsRegressor(),param_grid=param_grid,cv=tscv,scoring=scorer)
         
         n_neighbours_cv.fit(X_data,Y_data); # It splits and creates CV sets
         
-        print n_neighbours_cv.cv_results_
-        print n_neighbours_cv.best_estimator_
+        # print n_neighbours_cv.grid_scores_
+        # print n_neighbours_cv.cv_results_
+        # print n_neighbours_cv.best_estimator_
 
         # Return the optimal model
         bestEst= n_neighbours_cv.best_estimator_
+                   
+        return bestEst
+    
+def plotPredicted(df,future_df):
+    
+    script_el_data=''
+    div_el_data=''
+    
+    # Just draw one plot for all the ticker symbols requested for
+    TOOLS='pan,wheel_zoom,box_zoom,reset,save,box_select,crosshair'
+    
+    hover=HoverTool(
+            tooltips=[
+                ("Adj. Close",'$y'),
+                
+            ]
+        )
+    
+    list_symbols=list(df.columns)
+    
+    p = figure(width=900, height=500, x_axis_type="datetime",tools=[TOOLS,hover])
+    p.legend.location = "top_left"
+    p.xaxis.axis_label = 'Date'
+    p.yaxis.axis_label = 'Price (Adjusted Close)'
+    p.title.text = "Data for requested %s ticker symbols"%(", ".join(list_symbols))
+    
+       
+    colors=viridis(len(list_symbols))
+    for (i,sym) in enumerate(list_symbols):
+        #p.line(df.index[-20:],df[sym].ix[-20:],line_width=2,legend=sym,color=colors[i]) 
+        p.line(df.index,df[sym],line_width=2,legend=sym,color=colors[i]) 
+        p.line(future_df.index,future_df[sym],line_width=2,legend=sym,color=colors[i],line_dash='dashed')
         
-        
-    return bestEst
+    future_start_line = Span(location=time.mktime(df.index[-1].timetuple())*1000,
+                              dimension='height', line_color='red',
+                              line_dash='dashed', line_width=3)  
+    past_text=Label(x=time.mktime(df.index[-20].timetuple())*1000,y=df.ix[-1,:].sum()/2,text='Past')
+    future_text=Label(x=time.mktime(future_df.index[0].timetuple())*1000,y=future_df.ix[0,:].sum()/2,text='Future')
+    p.add_layout(future_start_line)
+    p.add_layout(past_text) 
+    p.add_layout(future_text)
+    script_el_data, div_el_data=components(p)
+    
+    return script_el_data, div_el_data 
