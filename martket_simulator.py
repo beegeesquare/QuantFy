@@ -21,11 +21,11 @@ from bokeh.plotting import figure, show,output_file,ColumnDataSource
 from bokeh.palettes import viridis
 from bokeh.embed import components
 from bokeh.layouts import gridplot
-from bokeh.models import HoverTool
+from bokeh.models import HoverTool, Span, Label
 from bokeh.charts import Area
 
 
-
+import time
 import pandas as pd
 import datetime as dt
 import util
@@ -76,7 +76,7 @@ def get_portVals():
         app_marketsim.vars['leverage_threshold']=float(request.form['leverage_threhsold'])
         app_marketsim.vars['bench_sym']=request.form['bench_sym']
         
-        portvals,all_prices_df,param_df=compute_portvals(filename, start_val = app_marketsim.vars['start_value'],
+        portvals,all_prices_df,param_df,orders_df=compute_portvals(filename, start_val = app_marketsim.vars['start_value'],
                                   leverage_threshold= app_marketsim.vars['leverage_threshold'],
                                   bench_sym=app_marketsim.vars['bench_sym'])
                 
@@ -105,14 +105,35 @@ def get_portVals():
         p.title.text = "Portfolio comparison for the given order file %s"%(app_marketsim.config['UPLOAD_FILENAME'])
         p.legend.location = "top_left"
         
-        colors=['red','blue']
+        colors=['orange','blue']
         
-        for (i,sym) in enumerate(portval_performance):
+        for (i,sym) in enumerate(portval_performance): # Here sym is benchmark and port
             p.line(portval_performance.index,portval_performance[sym],color=colors[i],line_width=2,legend=sym)
+        
+       
+        
+        p.circle(orders_df[orders_df['Order']=='BUY'].index,orders_df[orders_df['Order']=='BUY'],size=50,fill_color='green',line_color=None)
+        
+        # Add vertical lines for the BUY and SELL orders. GREEN/RED dotted
+        for i in orders_df[orders_df['Order']=='BUY'].index:
+            buy_order_span=Span(location=time.mktime(i.timetuple())*1000,
+                              dimension='height', line_color='green',
+                              line_dash='dashed', line_width=3)
+            p.add_layout(buy_order_span)
+        
+        for i in orders_df[orders_df['Order']=='SELL'].index:
+            sell_order_span=Span(location=time.mktime(i.timetuple())*1000,
+                              dimension='height', line_color='red',
+                              line_dash='dashed', line_width=3)
+        
+            p.add_layout(sell_order_span)
+        
         
         #p.line('Date',app_marketsim.vars['bench_sym'],color=colors,line_width=2,source=source)
         
         script_port_comp, div_port_comp=components(p)
+        
+        
         
         return render_template('market_simulator.html',script_port_comp=script_port_comp, div_port_comp=div_port_comp,
                                computed_params=param_df.to_html())
@@ -161,7 +182,7 @@ def compute_portvals(orders_file, start_val = 1000000,leverage_threshold=2.0,ben
     
     all_prices_df=pd.DataFrame(prices_df)
     
-    all_prices_df.to_csv('cache/all_prices.csv')
+    #all_prices_df.to_csv('cache/all_prices.csv')
     
     prices_df=prices_df.drop(bench_sym,axis=1)
     
@@ -260,7 +281,7 @@ def compute_portvals(orders_file, start_val = 1000000,leverage_threshold=2.0,ben
     
     #print param_df
     
-    return portval,all_prices_df,param_df
+    return portval,all_prices_df,param_df,orders_df
 
 
 def compute_indicators(portvals,sf=252.0,rfr=0.0):

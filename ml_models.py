@@ -202,21 +202,34 @@ def buildEstimator(X_data,Y_data,ml_model):
     Given the dataset of the symbol (historical), it will return the estimator
     """
     tscv=TimeSeriesSplit(n_splits=5) # Creates a time-series cross-validation set (creates 3 fold train and test sets, roll forward CV)
+    scorer=make_scorer(mean_squared_error,greater_is_better=False)
     if ml_model=="knn_algo":
         
         param_grid={'n_neighbors':range(3,20,1)}
-        scorer=make_scorer(mean_squared_error,greater_is_better=False)
+        
         n_neighbours_cv=GridSearchCV(KNeighborsRegressor(),param_grid=param_grid,cv=tscv,scoring=scorer)
         
         n_neighbours_cv.fit(X_data,Y_data); # It splits and creates CV sets
         
-        # print n_neighbours_cv.grid_scores_
-        # print n_neighbours_cv.cv_results_
-        # print n_neighbours_cv.best_estimator_
+        #print n_neighbours_cv.grid_scores_
+        #print n_neighbours_cv.cv_results_
+        #print n_neighbours_cv.best_estimator_
 
         # Return the optimal model
         bestEst= n_neighbours_cv.best_estimator_
                    
+        return bestEst
+    
+    if ml_model=="rf_algo":
+        
+        #print ml_model
+        param_grid={'oob_score':[True,False]}
+        rfr_cv=GridSearchCV(RandomForestRegressor(),param_grid=param_grid,cv=tscv,scoring=scorer)
+        
+        rfr_cv.fit(X_data,Y_data)
+        
+        bestEst=rfr_cv.best_estimator_
+        
         return bestEst
     
 def plotPredicted(df,future_df):
