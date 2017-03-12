@@ -3,12 +3,14 @@ from flask import Flask,render_template,redirect,request
 from collections import defaultdict
 
 import numpy as np
-from bokeh.plotting import figure, show
+from bokeh.plotting import figure, show,ColumnDataSource
 from bokeh.io import output_file
 from bokeh.embed import components
 from bokeh.palettes import Spectral11
 from bokeh.charts import Line,Area
-from bokeh.layouts import gridplot
+from bokeh.layouts import gridplot,WidgetBox
+from bokeh.models import HoverTool, Span, Label
+from bokeh.models.widgets import Panel, Tabs, DataTable,TableColumn
 
 import pandas as pd
 import datetime as dt
@@ -151,10 +153,13 @@ def plot_stock_prices():
             script_ele,div_ele=plot_symbols(full_data,usr_price_features, 'Quandl')
             
             computed_df=compute_params(full_data)
+            computed_df=computed_df.round(5)
+            script_computed_params,div_computed_params=convert_pd_bokeh_html(computed_df.round(4))
             
             script_param,div_param=plot_params(full_data)
             
-            return render_template('plot_prices.html',script_symbols=script_ele,plot_div_symbols=div_ele,computed_params=computed_df.to_html(),
+            return render_template('plot_prices.html',script_symbols=script_ele,plot_div_symbols=div_ele,
+                                   script_computed_params=script_computed_params,div_computed_params=div_computed_params,
                                    script_params=script_param,plot_div_features=div_param)
         
         elif app_quantfy.vars['data_src']=='get_data_yahoo': 
@@ -221,8 +226,8 @@ def portfolio_page():
         app_quantfy.vars['start_value']=float(request.form['start_value']); # It has a default value
         
         if len(app_quantfy.vars['guess_alloc']) !=0 and (app_quantfy.vars['guess_alloc'][0]!='') : # app_quantfy.vars['guess_alloc'] is a list because of the strip function
-            print app_quantfy.vars['guess_alloc']
-            print len(app_quantfy.vars['guess_alloc'])
+            # print app_quantfy.vars['guess_alloc']
+            # print len(app_quantfy.vars['guess_alloc'])
             app_quantfy.vars['guess_alloc']=[float(i) for i in app_quantfy.vars['guess_alloc']]
             try:
                 assert len(app_quantfy.vars['guess_alloc'])==len(app_quantfy.vars['sym'])
@@ -250,29 +255,37 @@ def portfolio_page():
         
         #print cr,adr,sddr,sr,ev
         
-        param_not_opt=pd.DataFrame([cr,adr,sddr,sr,ev],index=['CR','ADR','STDDR','SR','EV'], columns=['Unoptimized'])
+        param_not_opt=pd.DataFrame([cr,adr,sddr,sr,ev],index=['Cummulative Return','Additive Daily Return','Stand. Deviation Daily return',
+                                                          'Sharpe Ratio','End value'], columns=['Unoptimized'])
         
-        #print normalized_plot_df.head()
+        script_not_opt_table,div_not_opt_table=convert_pd_bokeh_html(param_not_opt)
         
-        TOOLS='pan,wheel_zoom,box_zoom,reset,save,box_select'
-        not_opt_p = figure(width=600, height=300, x_axis_type="datetime",tools=TOOLS)
+        # print normalized_plot_df.head()
+        hover=HoverTool(
+            tooltips=[
+                ("Portfolio",'$y')
+                
+                
+            ]
+        )
+        TOOLS='pan,wheel_zoom,box_zoom,reset,save,box_select,crosshair'
+        not_opt_p = figure(width=900, height=500, x_axis_type="datetime",tools=[TOOLS,hover])
         
         colors=['blue','red','green','#cc3300']
         
         for (i,ftr) in enumerate(normalized_plot_df):
-            not_opt_p.line(normalized_plot_df.index,normalized_plot_df[ftr],legend=ftr,color=colors[i])
+            not_opt_p.line(normalized_plot_df.index,normalized_plot_df[ftr],legend=ftr,color=colors[i],line_width=2)
         
         #not_opt_p.line(normalized_plot_df)
         
-        not_opt_p.title.text = "Un optimized portfolio value"
+        not_opt_p.title.text = "Un-optimized portfolio"
         not_opt_p.legend.location = "top_left"
-        not_opt_p.grid.grid_line_alpha=0
         not_opt_p.xaxis.axis_label = 'Date'
         not_opt_p.yaxis.axis_label = 'Relative portfolio value'
-        not_opt_p.ygrid.band_fill_color="olive"
-        not_opt_p.ygrid.band_fill_alpha = 0.1
         
-        script_not_opt, div_not_opt=components(not_opt_p)
+        tab_not_opt=Panel(child=not_opt_p,title='Un-optimized portfolio')
+        
+        # script_not_opt, div_not_opt=components(not_opt_p)
         
         # print script_not_opt,div_not_opt
         # Now run optimized
@@ -284,36 +297,51 @@ def portfolio_page():
         # print cr,adr,sddr,sr,ev,optimal_alloc
         
         # print normalized_plot_df.head()
+        hover=HoverTool(
+            tooltips=[
+                ("Portfolio",'$y')
+                
+                
+            ]
+        )
         
-        opt_p = figure(width=600, height=300, x_axis_type="datetime",tools=TOOLS)
+        opt_p = figure(width=900, height=500, x_axis_type="datetime",tools=[TOOLS,hover])
               
         for (i,ftr) in enumerate(normalized_plot_df):
-            opt_p.line(normalized_plot_df.index,normalized_plot_df[ftr],legend=ftr,color=colors[i])
+            opt_p.line(normalized_plot_df.index,normalized_plot_df[ftr],legend=ftr,color=colors[i],line_width=2)
         
-        #not_opt_p.line(normalized_plot_df)
         
+        # print normalized_plot_df
         opt_p.title.text = "Optimized portfolio value"
         opt_p.legend.location = "top_left"
-        opt_p.grid.grid_line_alpha=0
         opt_p.xaxis.axis_label = 'Date'
         opt_p.yaxis.axis_label = 'Relative portfolio value'
-        opt_p.ygrid.band_fill_color="olive"
-        opt_p.ygrid.band_fill_alpha = 0.1
         
-        script_opt, div_opt=components(opt_p)
+        tab_opt=Panel(child=opt_p,title='Optimized portfolio')
         
-        param_opt=pd.DataFrame([cr,adr,sddr,sr,ev],index=['CR','ADR','STDDR','SR','EV'], columns=['Optimized'])
+        tabs=Tabs(tabs=[tab_not_opt,tab_opt])
+        
+        script_opt, div_opt=components(tabs)
+        
+        
+        param_opt=pd.DataFrame([cr,adr,sddr,sr,ev],index=['Cummulative Return','Additive Daily Return','Stand. Deviation Daily return',
+                                                          'Sharpe Ratio','End value'], columns=['Optimized'])
+        
+        all_params=param_not_opt.join(param_opt)
+        
+        script_opt_table,div_opt_table=convert_pd_bokeh_html(all_params)
+        
         
               
         alloc_df=pd.DataFrame([app_quantfy.vars['guess_alloc'],list(optimal_alloc)],index=['Random/Guess allocations','Optimized allocations'],columns=app_quantfy.vars['sym'])
         
         #str_opt_alloc='Optimal allocations: '+', '.join([str(i) for i in optimal_alloc])
+        script_alloc_df,div_alloc_df=convert_pd_bokeh_html(alloc_df)
         
-        
-        
-        return render_template('portfolio.html',not_opt=param_not_opt.to_html(),opt=param_opt.to_html(), opt_alloc=alloc_df.to_html(),
-                               script_not_opt=script_not_opt,plot_not_opt=div_not_opt, 
-                               script_opt=script_opt,plot_opt=div_opt
+        # script_not_opt_table=script_not_opt_table,div_not_opt_table=div_not_opt_table,
+        return render_template('portfolio.html',script_opt_table=script_opt_table, div_opt_table=div_opt_table,
+                               script_alloc_df=script_alloc_df,div_alloc_df=div_alloc_df,
+                                script_opt=script_opt,plot_opt=div_opt
                                )
     
      
@@ -328,6 +356,8 @@ def plot_symbols(list_data_tuples,usr_price_features,data_src):
     #script_el_data=''
     #div_el_data='<h4> Time-series plot for all symbols with chosen features </h4><table style="width 50%"> <tr>'
     list_plots=[]
+    TOOLS='pan,wheel_zoom,box_zoom,reset,save,box_select,crosshair'
+    colors=['blue','red','green','#cc3300']
     for tpl in list_data_tuples:
         
         if 'error' not in tpl[1]:
@@ -340,11 +370,15 @@ def plot_symbols(list_data_tuples,usr_price_features,data_src):
             plot_price_features=list(set(usr_price_features).intersection(set(features)))
             
             df=full_df[plot_price_features]
+            hover=HoverTool(
+            tooltips=[
+                ("Price",'$y')
+                ]
+            )
             
             
-            TOOLS='pan,wheel_zoom,box_zoom,reset,save,box_select'
-            p = figure(width=500, height=300, x_axis_type="datetime",tools=TOOLS)
-            colors=['blue','red','green','#cc3300']
+            p = figure(width=900, height=500, x_axis_type="datetime",tools=[TOOLS,hover])
+            
             
             assert(len(colors)>=len(features))
             
@@ -353,21 +387,13 @@ def plot_symbols(list_data_tuples,usr_price_features,data_src):
             
             p.title.text = "Data for %s from %s data source"%(tpl[0],data_src)
             p.legend.location = "top_left"
-            p.grid.grid_line_alpha=0
             p.xaxis.axis_label = 'Date'
             p.yaxis.axis_label = 'Price'
-            p.ygrid.band_fill_color="olive"
-            p.ygrid.band_fill_alpha = 0.1
             
-            list_plots.append(p)
-            # Here I need to get the javascript for the plot and put it in the plot_features.html  (boilerplate) template
-            #plt_script,plt_div=components(p) # script and div needs to be inserted in the plot_features.html
+            tab=Panel(child=p,title=tpl[0])
             
-            #script_el_data+=plt_script; # This will be java script data element this need not be in a table form
-            
-            #div_el_data+='<td>'+plt_div+'</td>'
-            #print (plt_script)
-            #print (plt_div)
+            list_plots.append(tab)
+        
         else:
             print tpl[0]
             
@@ -377,7 +403,7 @@ def plot_symbols(list_data_tuples,usr_price_features,data_src):
     
     #print script_el_data, div_el_data       
     if len(list_plots)!=0:
-        script_el_data, div_el_data=components(gridplot(list_plots,ncols=2, plot_width=600, plot_height=400,tools=TOOLS))
+       script_el_data, div_el_data=components(Tabs(tabs=list_plots))
     else:
         script_el_data=''
         div_el_data=''
@@ -434,10 +460,16 @@ def plot_params(list_data_tuples):
     
     #print Paired
     colors=Spectral11[0:len(daily_returns.columns)] # Paired is dict with keys as the number of colors needed. Largest Key is 12
-    TOOLS='pan,wheel_zoom,box_zoom,reset,save,box_select'
+    TOOLS='pan,wheel_zoom,box_zoom,reset,save,box_select,crosshair'
+   
 
     for param in param_dict.keys():
-        p = figure(width=500, height=300, x_axis_type="datetime",tools=TOOLS)
+        hover=HoverTool(
+            tooltips=[
+                ("Metric",'$y')
+                ]
+            )
+        p = figure(width=900, height=500, x_axis_type="datetime",tools=[TOOLS,hover])
     
         if param =="Bollinger Bands":
             upper_band=param_dict[param][0]
@@ -453,30 +485,35 @@ def plot_params(list_data_tuples):
                 
         p.title.text = param
         p.legend.location = "top_left"
-        p.grid.grid_line_alpha=0
         p.xaxis.axis_label = 'Date'
         p.yaxis.axis_label = param
-        p.ygrid.band_fill_color="olive"
-        p.ygrid.band_fill_alpha = 0.1
-    
-        # Here I need to get the javascript for the plot and put it in the plot_features.html  (boilerplate) template
-        #plt_script,plt_div=components(p) # script and div needs to be inserted in the plot_features.html
+       
+        tab=Panel(child=p,title=param)
         
-        #script_el_param+=plt_script; # This will be java script data element this need not be in a table form
-        
-        #div_el_param+='<td>'+plt_div+'</td>'
-        
-        list_plots.append(p)
+        list_plots.append(tab)
     
     if len(list_plots)!=0:
-        script_el_param, div_el_param=components(gridplot(list_plots,ncols=2, plot_width=600, plot_height=400,tools=TOOLS))
+        script_el_param, div_el_param=components(Tabs(tabs=list_plots))
     else:
         script_el_param=''
         div_el_param=''
     
     return script_el_param, div_el_param
 
-
+def convert_pd_bokeh_html(df):
+    
+    # Put the metrics table in the html using bokeh
+    df_data=dict(df[[i for i in df.columns]].round(4) )
+   
+    df_data['Metric']=df.index # This will add the index (Note: Instead of Metric, if I use index, then the width of output index column cannot be adjustested )
+    source=ColumnDataSource(df_data)
+    columns=[TableColumn(field=i,title=i) for i in df.columns]
+    # Insert the index column to the list of columns
+    columns.insert(0, TableColumn(field="Metric",title="Metric"))
+    df_table=DataTable(source=source,columns=columns, height=200, width=450)
+    table_script,table_div= components(WidgetBox(df_table))
+    
+    return table_script,table_div
 
 
 

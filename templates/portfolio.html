@@ -45,9 +45,9 @@
   } );
   </script>
 
-{{ script_not_opt |safe }}
 {{ script_opt | safe }}
-
+{{script_opt_table | safe}}
+{{script_alloc_df | safe}}
 
 <head>
 
@@ -138,10 +138,14 @@
                      <tr>
                       <td> <p> Ticker Symbol(s): <input type='text' name='sym' placeholder="GOOG" /> {{ error_sym | safe }}</p> </td>
                       <td> <p> Benchmark symbol: <input type='text' name='bench_sym' value='SPY' /> </p> </td> <!-- default value is SP500 -->
+                    </tr>
+                    <tr>
                       <td> <p> Start date:       <input type='text' name='start_date' id="from" placeholder="MM/DD/YYYY" /> {{ error_start_date | safe }} </p></td>
-                      <td> <p> End date:         <input type='text' name='end_date' id="to" placeholder="MM/DD/YYYY"/> {{ error_end_date | safe }} </p> </td>
+
+                      <td> <p> End date:         <input type='text' name='end_date' id="to" placeholder="MM/DD/YYYY"/> {{ error_end_date | safe }} </p> </td> </tr>
+                      <tr>
                       <td> <p> Start value of portfolio:   <input type='text' name='start_value' id="sv" value="100000" /> </p> </td>
-                      <td> <p> Your (guess) allocations:   <input type='text' name='guess_alloc' id="alloc" placeholder="0.2;0.3;0.4;0.1"/> {{error_alloc | safe }} </p> </td>
+                      <td> <p> Your (guess) allocations:   <input type='text' name='guess_alloc' id="alloc" placeholder="0.2;0.3;0.4;0.1"/> {{error_alloc | safe }} </p> </td> </tr>
                      </tr>
                     </table>
 
@@ -151,17 +155,16 @@
                     <table style="width:80%">
                      
                     <tr>
-                      <td> <p>  {{ not_opt | safe }} </p> </td>
-                      <td> <p>  {{ opt | safe }}</p> </td>
+                      <td> <p>  {{ div_opt_table | safe }} </p> </td>
                      </tr>
 
                      <tr>
-                      <td> <p>  {{ opt_alloc | safe }} </p> </td>
+                      <td> <p>  {{ div_alloc_df | safe }} </p> </td>
                      </tr>
+                     </table>
 
-
+                     <table>
                      <tr>
-                      <td> <p>  {{ plot_not_opt | safe }} </p> </td>
                       <td> <p>  {{ plot_opt | safe }}</p> </td>
                      </tr>
                     </table>

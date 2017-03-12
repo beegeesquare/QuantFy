@@ -47,7 +47,7 @@
 
 {{ script_symbols |safe }}
 {{ script_params | safe }}
-
+{{script_computed_params | safe }}
 <head>
 
     <meta charset="utf-8">
@@ -128,6 +128,8 @@
                         <p> 
                          Please enter a stock ticker eg. GOOG, and check desired features. Mulitple stock (symbols) are seperated by ; <br></br>
                          Default benchmark comparision is SPY (SP 500 trade).
+                         Along, with price ploting of the stocks, these features will be computed (1) Rolling mean (RM), (2) Rolling standard deviation (RSTD), (3) Bollinger bands, (4) Daily returns (DR), (5) Cummulative daily return (CDR), (6) Average daily return (CDR), (7) Standard deviation daily return (STDDR), (8) Sharpe ratio (SR). 
+
                          To change the default value, use the respective ticker symbol in the form below
                          </p>
                         
@@ -146,28 +148,19 @@
                         </table>
                         <br>
                         <table style="width:100%">
+                        <col width="350">
+                        <col width ="550">
                         <tr> 
-                            <th>  <h4> Price related features <p> {{ error_features | safe }} </p> </h4> </th>
-                            <th> <h4> Select features to be computed (not enabled yet) </h4> </th>
-                            <th> <h4> Computed values </h4> </th>
+                            <th>  <h4> Select price related features <p> {{ error_features | safe }} </p> </h4> </th>
+                            <th> <h4> Computed values</h4> </th>
                         </tr>   
                         <tr> <td>  <input id="cp" type="checkbox" name="closeprice"> Closing price <br> 
                         <input id="acp" type="checkbox" name="adjclose"> Adjusted closing price <br>
                         <input id="op" type="checkbox" name="openprice"> Opening price <br>
                         <input id="aop" type="checkbox" name="adjopen"> Adjusted opening price <br> </td>
+                        
                         <td>
-                        <input id="RM" type="checkbox" name="rollingmean"> Rolling mean (RM) <br> 
-                        <input id="RSTD" type="checkbox" name="rollingstd"> Rolling standard deviation (RSTD) <br>
-                        <input id="BOLLBNDS" type="checkbox" name="bollingerbands"> Bollinger bands <br>
-                        <input id="DR" type="checkbox" name="dailyreturns"> Daily returns (DR) <br>
-                        <input id="CDR" type="checkbox" name="cummdailyreturns"> Cummulative daily return (CDR) <br>
-                        <input id="ADR" type="checkbox" name="avgdailyreturns"> Average daily return (CDR) <br>
-                        <input id="STDDR" type="checkbox" name="stddailyreturns"> Standard deviation daily return (STDDR) <br>
-                        <input id="SR" type="checkbox" name="sharperatio"> Sharpe ratio (SR) <br>
-                        </td>
-
-                        <td>
-                            {{ computed_params |safe }}
+                            {{ div_computed_params |safe }}
                         </td>
 
 
@@ -177,10 +170,16 @@
                         
                         </form>
 
-                        
-
+                        <table>
+                        <tr><td>
                         {{ plot_div_symbols | safe }} <!-- this will be a table form, and this will be for all the symbols -->
-                        {{ plot_div_features | safe }} <!-- this will be a table form, and this will be for all the features -->
+                        </td></tr></table>
+                        <table>
+                        <tr><td>
+                             {{ plot_div_features | safe }} <!-- this will be a table form, and this will be for all the features -->
+                        </td></tr>
+                        </table>
+                       
                         <br>
                         <br>
 
