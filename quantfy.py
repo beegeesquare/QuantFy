@@ -168,7 +168,8 @@ def plot_stock_prices():
             return render_template('plot_prices.html',error_yahoo='<font size="3" color="red"> Data source not yet enabled </font>')
         
         # Here when the user clicks submit button, the bokeh plot should be displayed
-        
+
+  
 @app_quantfy.route('/portfolio',methods=['GET','POST'])
 def portfolio_page():
     if request.method=='GET':
