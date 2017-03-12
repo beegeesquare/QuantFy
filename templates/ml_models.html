@@ -46,8 +46,8 @@
   </script>
 
 {{ script_el_data |safe }}
-
-
+{{script_metrics | safe }}
+{{script_price_describe |safe }}
 <head>
 
     <meta charset="utf-8">
@@ -98,12 +98,12 @@
                      <ul class="list-unstyled" id ="demo" class="panel-collapse collapse" style="color: #999999;">
                         <li> <a href="/marketSimUpload">Market simulator </a> </li>
                         <li> <a href="/mlModels"> Machine Learning models </a> </li>
-                        <li>Q-Learning</li>
+                        <li>Q-Learning (Future work)</li>
                     </ul>
                     
                 </li>
                 <li>
-                    <a href="#">Commodity stocks</a>
+                    <a href="#">Commodity stocks (Future work)</a>
                 </li>
                 <li>
                     <a href="#">About</a>
@@ -111,19 +111,6 @@
                 
                 <li>
                     <a href="#">Contact</a>
-                </li>
-
-                 <li>
-                    <a href="/price_plot_interactive"> Beta version (Visual Plot 1)</a>
-
-                </li>
-                <li>
-                    <a href="/price_plot_interactive_2"> Beta version (Visual Plot 2)</a>
-                    
-                </li>
-                <li>
-                    <a href="#"> Beta version (Visual Plot 3)</a>
-                    
                 </li>
 
                 
@@ -150,21 +137,28 @@
                          <tr>
                           <td> <p> Ticker Symbol(s): <input type='text' name='sym' placeholder="GOOG" /> {{ error_sym | safe }}</p> </td>
                           <td> <p> Machine learning algorithm:  <select name="ml_algo">
+                                                                <option value="mean_algo">Mean-model</option>
                                                                   <option value="knn_algo">k-Nearest neighbours</option>
                                                                   <option value="rf_algo">Random Forest Regressor</option>
                                                                   <option value="lr_algo">Linear Regression</option>
-                                                                  <option value="ridge_algo">Ridge CV</option>
-                                                                </select></p>
+                                                                  <option value="ridge_algo">Ridge</option>
+                                                                </select></p> </td>
+                          <td> <p> Benchmark algorithm:  <select name="bench_ml_algo">
+                                                                <option value="mean_algo">Mean-model</option>
+                                                                  <option value="knn_algo">k-Nearest neighbours</option>
+                                                                  <option value="rf_algo">Random Forest Regressor</option>
+                                                                  <option value="lr_algo">Linear Regression</option>
+                                                                  <option value="ridge_algo">Ridge</option>
+                                                                </select></p></td> {{ error_same_mdl | safe }}
+                          </tr>
+                          <tr>
                           <td> <p> Start date (for data):       <input type='text' name='start_date' id="from" placeholder="MM/DD/YYYY" /> {{ error_start_date | safe }} </p></td>
-                          <td> <p> End date (for data):         <input type='text' name='end_date' id="to" placeholder="MM/DD/YYYY"/> {{ error_end_date | safe }} </p> </td>
-                          <td> <p> <p> Benchmark algorithm:  <select name="bench_ml_algo">
-                                                                  <option value="bench_knn_algo">k-Nearest neighbours</option>
-                                                                  <option value="bench_rf_algo">Random Forest Regressor</option>
-                                                                  <option value="bench_lr_algo">Linear Regression</option>
-                                                                  <option value="bench_ridge_algo">Ridge CV</option>
-                                                                </select></p></td>
-                          <td> <p> Future (prediction) days:         <input type='text' name='future_days' id="win" value=5> </p> </td>
-                         </tr>
+                          <td> <p> End date (at least 6 months):         <input type='text' name='end_date' id="to" placeholder="MM/DD/YYYY"/> {{ error_end_date | safe }} </p> </td>
+                          <td> <p> Future (prediction) days: <input type='text' name='future_days' id="win" value=5> </p> </td>
+                          </tr>
+                                                   
+                         
+                         
                         </table>
                         <br>
                         <table style="width:100%">
@@ -176,17 +170,18 @@
                         </form>
 
                         <br>
-                        {{metrics | safe}}
-                        <br>
-                        <br>
-                        <br>
-                        <br>
-
-                        {{ div_el_data | safe }}
-
                         
-                        
-
+                        <table>
+                        <col width="550">
+                        <col width ="450">
+                        <tr> <td> {{div_metrics | safe}} </td> <td> {{div_price_describe | safe }} </td> </tr>
+                        </table>
+                        <table>
+                        <tr> <td> {{ div_el_data | safe }}</td></tr>
+                        </table> 
+                         <br>
+                         <br>
+                         <br>
                                             <a href="#menu-toggle" class="btn btn-default" id="menu-toggle">Toggle Menu</a>
                                         </div>
                                     </div>
@@ -194,7 +189,7 @@
                             </div>
                             <!-- /#page-content-wrapper -->
 
-                        </div>
+    </div>
     <!-- /#wrapper -->
 
 
