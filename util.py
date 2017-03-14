@@ -30,7 +30,7 @@ def get_data(list_data_tuples):
         if tpl[0] == benchmark_symbol:  # drop dates SPY did not trade
             df = df.dropna(subset=[benchmark_symbol])
 
-    #print df.head(10)
+    df=df.dropna(axis=0) # This drops any NaN values especially if the stock price has no information
     
     return df
 
@@ -162,7 +162,7 @@ if __name__=='__main__':
     full_data=[(sym, apicall_data.get_data_from_quandl(sym, start_dt=dt.datetime.today()-dt.timedelta(days=5*365),
                                                        end_dt=dt.datetime.today())
                         ) for sym in symbols]
-    
+    print full_data
     df=get_data(full_data)   
     rm=get_rolling_mean(df,window=20)
     rstd=get_rolling_std(df, window=20)

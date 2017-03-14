@@ -8,3 +8,18 @@ While using market simulator at http://quantfy.herokuapp.com/marketSim, some dem
 Also, when uploding a new file for Market Simulator, make sure you click "Upload new order file". Otherwise application might through an error (TODO: Need to fix at issue)
 
 A detailed report is  also available at:https://github.com/beegeesquare/QuantFy/blob/master/docs/report/report.pdf
+
+## The following libraries are used in the project (There is also a requirements file in the repo)
+- flask
+- numpy
+- bokeh
+- pandas
+- requests
+- simplejson
+- gunicorn
+- oauth
+- oauthlib
+- quandl
+- scipy
+- ediblepickle
+- scikit-learn
