@@ -1,0 +1,464 @@
+\documentclass[12pt]{article}
+\usepackage{fullpage,graphicx,psfrag,amsmath,amsfonts,verbatim}
+\usepackage[small,bf]{caption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{color}
+\usepackage{minted}
+\usepackage{subcaption}
+\usepackage{pgfplots}
+
+\input defs.tex
+
+\bibliographystyle{alpha}
+
+\title{QuantFy: Predictive Market Behavior App using Machine Learning }
+\author{Balagangadhar Bathula}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Investment firms, hedge funds and even individuals have been using financial models to better understand market behavior and make profitable investments and trades.  To maximize return of investment these firms use large amounts of historical data and apply machine learning algorithms to the process.
+QuantFy is an application (app) that would build predictive/optimized models using machine learning models such as linear regression, random forests and $k$-nearest neighbour. 
+
+
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+This is description document for the Capstone project for Machine Learning Nanodegree program of Udacity. 
+
+\section{Domain Background}
+\label{sec:background}
+Many financial, high frequency trading (HFT), and hedge fund companies are analyzing trading strategeis including algorithmic steps from information gathering to market orders using machine-learning approaches. This project proposes to apply these probabilistic techniques to make trading decisions. Using approaches such as linear regression, Q-learning, $k$-NN and regression trees and apply them to the actual trading situations.
+
+This application software will be build using Python tools \cite{PyFi}. The book \cite{HeFu} provides a comprehensive overview of domain knowledge that would be required to understand the financial market world. Also the speicifications given \cite{GeTechCourse} will be used as guidelines to build this application. 
+
+\section{Problem Statement}
+\label{sec:prob}
+Using the historical data for prices and performance statistics as features, we can get predicted future price of the stock. For instance we can set of performance statistics (such as Bollinger bands,  price-to-earning (P/E) ratio) as features of the present date mapped to price (say one week forecast which is an input) of price.
+This creates a data set $<X,Y>$, where $X$ is the set of features and $Y$ as trading days.  Features used are the measurable quantities that a particular stock could use in the predicting things such as change in price, market relative change in price or simply future stock price. Few questions that one would ask, before getting started are-
+\begin{enumerate}
+\item Breath and depth of data: How much historical data one would like to consider?
+\item What ticker symbols are you going to use?
+\end{enumerate}
+General machine learning models that can be used for this problem are:
+\begin{enumerate}
+\item Regression
+\item $k$-nearest neighbors
+\item Random Forests
+\item Time-series analysis: This analysis will be used to estimate the commodity prices such as oil/gas etc. For instance we can observe long term trend in the time-series (such as exponential) and fit an exponential model to predict the future price. Using the concepts of \underline{drift} and \underline{seasonality}, build models for commodity stocks.
+\end{enumerate}
+
+\section{Datasets and Inputs} 
+\label{sec:datasets}
+There are many open APIs to extract data:
+\begin{enumerate}
+\item Yahoo Finance:
+\begin{enumerate}
+\item Using the http://ichart.finance.yahoo.com/table.csv?s=\{YOUR\_SYMBOL\} we can query and get historical data.
+\item We can also use yahoo\_finance python library or,
+\item We can also use pandas\_datareader
+\end{enumerate}
+\item Quandl: Using quandl python API we can get the historical data
+\item Bloomberg API
+\end{enumerate}
+Current version of QuantFy application proposes to uses Yahoo Finance source and Quandl to get historical data. One can extract more than 10 years of historical stock prices for many ticker symbols. This data is obtained using appropriate API calls to the sources (listed below). 
+
+\begin{figure}[!htbp]
+\begin{center}
+\includegraphics[height=0.5\textheight,width=\textwidth]{price_plot_IBM.png}
+\label{fig:ibm}
+\caption{IBM prices from Jan 1 2016, from Quandl data source}
+\end{center}
+\end{figure}
+
+For instance user can the date range for viewing the stock prices of ticker symbols. Then an request call will be made and acquired data will be converted into a \texttt{pandas}  dataframe. This data will also be stored locally, using python libraries such as \texttt{ediblepickle}, so when the same request is made (no change in the parameters), data is retrieved locally. Since the data is generated online (rather than locally available data), we are not particularly concerned about the storing the data. At least from the past experience, the stock price data can be easily stored in the dataframe without any memory errors. We anticipate that the historical prices for the each ticker symbol will be in the order of less than 1 MB.
+
+\begin{enumerate}
+\item Close price and/or Adjusted close price
+\item Start price and/or Adjusted start price,
+\item Opening price  and/or adjusted opening price
+\end{enumerate}
+
+
+
+The data from these sources consists of features like:
+
+
+\begin{figure}[!htbp]
+\label{fig:tsla}
+\begin{center}
+\includegraphics[height=0.5\textheight,width=\textwidth]{price_plot_TSLA.png}
+\caption{Tesla prices from Jan 1 2016, Quandl data source}
+\end{center}
+\end{figure}
+
+
+Snapshot of the plot prices for IBM, TSLA (Tesla) and AAPL (Apple) are shown in Figure~1, 2, and 3 respectively. For more detailed refer to the application website \href{http://quantfy.herokuapp.com}{\color{blue}{\bf QuantFy}} \cite{qfy}.
+
+
+\section{Analyzing the stock price data}
+\label{sec:anal}
+
+When getting the stock price data for the ticker symbols, one need to clean the data to see if there are any un-available data points. For instance the stock has not traded a day, then it is mostly likely the exchange is closed. These \texttt{NaN} values have to be removed from the data-set. The most common way to do it this is to align the ticker symbol with the a benchmark symbol, say S\&P500 company and drop any \texttt{NaN} values in the data set. Also, we drop dates at which the S\&P500 has not traded. Sometimes the company's stock price might not be available, as it did not have an IPO (initial public offering) for the date. So we need to remove such data points as well. For example if we get the stock price of the \texttt{GOOG} from year 2010, then there will be \texttt{NaN} until year 2014. In \texttt{pandas} we can accomplish this with \texttt{df=df.dropna(axis=0)}, where \texttt{df} is the dataframe, and \texttt{dropna()} drops any values with \texttt{NaN} along the rows (\texttt{axis=0}).
+
+\begin{figure}[!htbp]
+\label{fig:aapl}
+\begin{center}
+\includegraphics[height=0.5\textheight,width=\textwidth]{price_plot_AAPL.png}
+\caption{Apple prices from Jan 1 2016, Quandl data source}
+\end{center}
+\end{figure}
+
+Table 1, shows the description of the data.
+\begin{table}
+\begin{center}
+\begin{tabular} {|c|c|c|c|}
+\hline \hline
+\textbf{Metric} & \textbf{IBM} & \textbf{TSLA} & \textbf{AAPL} \\ \hline
+Count & 300 & 300 & 300 \\ \hline
+Mean & 151.4008 & 216.3058 & 107.5923\\ \hline
+Standard deviation   & 15.7737 & 25.3987&12.2136  \\ \hline
+Minimum & 113.8011 & 143.67 & 89.47 \\ \hline
+25\% percentile & 143.5718 & 199 & 96.9126 \\ \hline
+50\% percentile  & 151.7834 & 215.205 & 107.1624\\ \hline
+75\% percentile  & 151.7834 & 215.205 & 107.1624 \\ \hline
+Maximum  &  151.7834 & 215.205 & 107.1624\\ \hline
+\hline
+\end{tabular}
+\end{center}
+\caption{Description of the data for the stock symbols IBM, TSLA, AAPL}
+\end{table}
+
+
+There are four features related to the prices, but we use adjusted close price is what we use for the rest of the discussion. Along with these features, one could compute other features like:
+
+\begin{enumerate}
+ \item \underline{Daily returns (DR)}: How much the price will go up or down on a particular instance of time:
+\[ r(t)=\frac{p(t)}{p(t-1)}-1,
+\]
+where $p(t)$ is the price at time $t$.
+\item \underline{Average daily return (ADR)}: This is simply the average value of the the daily returns.
+\[ adr = \frac{\Sigma_{t=1}^{N} r(t)}{N}\]
+
+\item \underline {Cumulative daily return (CDR)}: Defined as the ratio of the final value of the the daily return to the initial value of the daily return 
+
+\[ cdr= \frac{r(N)}{r(0)},\] where $N$ is the last sample point in the series.
+
+\item \underline {Standard deviation of DR}: It is simply the standard deviation of the daily return ($r(t)$), which is the square-root of the variance.
+
+\item\underline{Cumulative return} is given by,
+\[ cr(t)=\frac{p(t)}{p(0)}-1
+\]
+\item \underline{Simple moving average (SMA)}: Also know as moving average
+  {\small \begin{minted}{python}
+rolling_df=pd.DataFrame(index=df.index)
+rolling_df =pd.Series.rolling(df,window=window).mean().to_frame() 
+rolling_df.ix[:window, :] = 0
+ \end{minted}
+}
+
+Table 2 shows the computed parameters for the data. Also, the other parameters are plotted in Fig. 4, 5 and 6 respectively.
+\begin{table}
+\begin{center}
+\begin{tabular} {|c|c|c|c|}
+\hline \hline
+\textbf{Metric} & \textbf{IBM} & \textbf{TSLA} & \textbf{AAPL} \\ \hline
+Cummulative daily return & 0.368 & 0.091 & 0.348 \\ \hline
+Average daily return & 0.0011 & 0.00056 & 0.0011\\ \hline
+Standard deviation of daily return  & 0.012 & 0.023 & 0.014  \\ \hline
+Sharpe ratio & 1.49 & 0.38 & 1.23 \\ \hline
+\hline
+\end{tabular}
+\end{center}
+\caption{Parameters computed for the stock symbols IBM, TSLA, AAPL}
+\end{table}
+
+\begin{figure}[!htbp]
+\begin{center}
+\includegraphics[height=0.5\textheight,width=\textwidth]{rolling_mean.png}
+\label{fig:ibm}
+\caption{Rolling mean for the symbols IBM, TSLA and AAPL}
+\end{center}
+\end{figure}
+\item \underline{Bollinger bands}: 
+
+ \[ U_{band}=m_r+2\times\sigma_r, \]
+\[ L_{band}=m_r-2\times\sigma_r \]
+
+where $m_r$ is the rolling mean and $\sigma_r$ is the rolling standard-deviation of the adjusted close price.
+
+\item \underline{Normalized Bollinger bands}: Value varies between -1.0 and 1.0.
+
+\[ bb_{norm}=\frac{price[t]-SMA[t]}{2\times\sigma[t]}		\]
+
+where $\sigma$ is the rolling standard deviation and $SMA$ is the simple moving average. 
+
+\item \underline{Sharpe ratio} This metric adjusts the return for risk, also know as risk adjusted reward.
+\[ 
+	sr= \frac{R_p-R_f}{\sigma_p},
+\]
+where $R_p$ is the portfolio return, $R_f$ is risk-free return and $\sigma_p$ is the standard deviation of portfolio return. 
+\[ sr=\frac{E[R_p-R_f]}{\sigma[R_p-R_f]} \]
+Sharpe ratio varies depending on how frequently you sample the data. $sr_f=k\times sr$, where $k=\sqrt{\mbox{\# samples/year}}$
+\item \underline{Volatility} is nothing but the standard deviation of the daily returns.
+
+\begin{figure}[!htbp]
+\label{fig:tsla}
+\begin{center}
+\includegraphics[height=0.5\textheight,width=\textwidth]{rolling_sd.png}
+\caption{Rolling standard deviation ($\sigma$) for the symbols IBM, TSLA and AAPL}
+\end{center}
+\end{figure}
+
+\item Momemtum is defined as:
+\[ r(t)=\frac{p(t)}{p(t-N)}-1
+\]
+where $N$ is the size of the window.
+\end{enumerate}
+
+Below are some of the plot obtained for IBM, TSLA and AAPL are shown in Fig.~4, 5, and 6 respectively. For more details, refer to the application website \cite{qfy}
+
+\begin{figure}[!htbp]
+\label{fig:aapl}
+\begin{center}
+\includegraphics[height=0.5\textheight,width=\textwidth]{rolling_bb.png}
+\caption{Bollinger bands IBM, TSLA and AAPL; upper are shown in solid lines and lower bands are shown in dotted lines }
+\end{center}
+\end{figure}
+
+\section{Project Design}
+\label{sec:design}
+
+
+Design phase of the QuantFy application consists of following phases:
+\begin{itemize}
+\item Time-series plots for the various stocks can be visualized at this link: \href{http://quantfy.herokuapp.com/price_plot}{\color{blue}{Price plot}} \cite{pp}. This link also computes various other technical indicators such as the SMA, Bollinger bands, etc.
+\item Portfolio optimizer: Analyzing using stock price data, and using numerical optimization techniques, this has already been implemented in the app. Link to the app is \href{http://quantfy.herokuapp.com/portfolio}{\color{blue}{\bf Portfolio optimizer}} \cite{po}
+
+\item Investment and Trading using machine learning: This was be built using the machine-learning stratagies such as (1) $k$-nearest neighbors (2) Random forests (3) Linear regression  and (4) Ridge regression. One can compare the performance of any two algorithms in the application. For more details, visit the application at \href{http://quantfy.herokuapp.com/mlModels}{\color{blue}{\bf ML models}}
+
+\subsection{Software}
+\begin{enumerate}
+\item Front-end: Python \texttt{flask} based web application
+\item Back-end: Python libraries, such as \texttt{scikit-learn, pandas, numpy, scipy, bokeh}.
+\item Hosting platform: Heroku
+\end{enumerate}
+
+This  application can be accessed at: \href{http://quantfy.herokuapp.com}{\color{blue}{\bf QuantFy}} \cite{qfy}. The current version of the source code for this application can be found at this GitHub link: \href{https://github.com/beegeesquare/QuantFy}{\color{blue}{\bf Source code}} \cite{sc}
+
+
+
+\section{Algorithms used in the project}
+\label{sec:algos}
+
+\subsection{Convex Optimization}
+\label{sec:convex}
+
+\subsection{Linear regression}
+\label{sec:lr}
+
+\subsection{Random forest regression}
+\label{sec:rfr}
+
+\subsection{$k$-nearest neighbors}
+\label{sec:knn}
+
+\subsection{Ridge regression}
+\label{sec:rr}
+
+\section{Methodology}
+\label{sec:method}
+
+
+
+\section{Portfolio optimization}
+\label{sec:opt}
+
+\begin{itemize}
+\item Given set of assets and time-period, find allocations of funds to assets that maximizes performance.
+\item Performance metrics can be:
+\begin{itemize}
+\item $\max cr(t)$,
+\item $\min \sigma(t)$, i.e., minimizing volatility.
+\item $\max sr$
+\end{itemize}
+\item Framing the problem:
+\begin{enumerate}
+\item Provide a function $f(X)=cX+b$ to minimize.
+\item Provide an initial guess for allocations.
+\item Call the optimizer.
+\end{enumerate}
+\item Constraints: We know that allocations for each stock symbol in the portfolio should be $\leq 1$, i.e.,
+\[ \Sigma_{i=0}^{k} |X_i|=1.0,
+	\]
+where $X_i$'s are allocations for each stock.
+\end{itemize}
+
+This problem is a convex optimization problem and can be solved using the numerical optimization algorithms. Below is the snippet of the optimization code in \texttt{scipy}.
+
+\begin{tabular}{@{}|p{12.5cm}|@{}}
+\hline
+\begin{minted}{python}
+import scipy.optimize as spo
+initial_alloc=[(1.0/len(sym))]*len(sym) 
+bounds=((0,1),)*len(sym) 
+opt_allocs=spo.minimize(sharpe_function*-1, initial_alloc, 
+	args=df, method='SLSQP',bounds=bounds,
+	constraints=({'type':'eq','fun':lambda
+	opt_allocs: 1-np.sum(np.abs(opt_allocs))}
+	)
+	); 
+optimal_allocs=opt_allocs.x 
+\end{minted}
+\\
+\hline
+\end{tabular}
+
+
+Portfolios in comparision with SP\&500 for the symbols, GOOG, AAPL, MSFT and IBM for duration between Jan 1 2013 to March 14 2017, for both unoptimized and optimized are shown in Fig. 7 and 8 respectively.
+
+
+\begin{figure}[!htbp]
+\label{fig:unoptimized}
+\begin{center}
+\includegraphics[height=0.5\textheight,width=\textwidth]{unoptimized.png}
+\caption{Unoptimized portfolio for GOOG, AAPL, MSFT and IBM in comparison with SP\&500, with a start value of \$10000}
+\end{center}
+\end{figure}
+
+\begin{table}
+\begin{center}
+\begin{tabular} {|c|c|c|}
+\hline \hline
+\textbf{Metric} & \textbf{Un-optimized} & \textbf{Optimized}  \\ \hline
+Cumulative daily return & 0.6065 & 0.8507 \\ \hline
+Average daily return & 0.0007 & 0.0009\\ \hline
+Standard deviation of daily return  & 0.0116 & 0.0126  \\ \hline
+Sharpe ratio & 0.9624 & 1.1424 \\ \hline
+End value & \$160651.061 & \$185068.0823 \\ \hline
+\hline
+\end{tabular}
+\end{center}
+\caption{Parameters computed for un-optimized and optimized portfolio}
+\end{table}
+
+
+
+\begin{figure}[!htbp]
+\label{fig:optimized}
+\begin{center}
+\includegraphics[height=0.5\textheight,width=\textwidth]{optimized.png}
+\caption{Optimized portfolio for GOOG, AAPL, MSFT and IBM in comparison with SP\&500}
+\end{center}
+\end{figure}
+
+\begin{table}
+\begin{center}
+\begin{tabular} {|c|c|c|c|c|}
+\hline \hline
+\textbf{Metric} & \textbf{GOOG} & \textbf{AAPL} & \textbf{MSFT} & \textbf{IBM} \\ \hline
+Random allocations & 0.4682 & 0.1894 &0.2449 &0.0975 \\ \hline
+Optimized allocations & 0 & 0.539 & 0.461 & 0 \\ \hline
+\hline
+\end{tabular}
+\end{center}
+\caption{Parameters computed for un-optimized and optimized portfolio}
+\end{table}
+
+\section{Market Simulator}
+\label{sec:sim}
+Based on the orders file, the portfolio value can be analyzed. For instance if BUY or SELL order comes, depending on the stock price value of the order, the portfolio value changes. Using the leverage threshold, orders can be executed or fail to execute if the leverage value exceeds the threshold.
+
+Leverage value is defined as:
+
+\[ leverage = \frac{\Sigma|sp|} {(\Sigma(sp) + cash) }\],
+
+where $sp$ is defined as all-stock positions \cite{GeTechCourse}. 
+
+\begin{figure}[!htbp]
+\label{fig:optimized}
+\begin{center}
+\includegraphics[height=0.5\textheight,width=\textwidth]{market.png}
+\caption{Market simulator for a order file. The green vertical lines indicate a BUY order and RED vertical lines indicate a SELL order }
+\end{center}
+\end{figure}
+
+The Fig. 9 is generated using orders file located at \href{https://github.com/beegeesquare/QuantFy/blob/master/orders/orders_demo.csv}{\color{blue}{\bf Orders-demo}}
+
+\section{Solution Statement}
+\label{sec:solution}
+Predicts the stock prices and also measures the accuracy of these forecasts. Using back-testing a method where we roll back time and measure the accuracy of these forecasts.  Slice the sample data from (historical) training set and apply the machine learning models to get the forecast.  By comparing the predictive results of the model against the historical results,  back-testing can determine whether the model has predictive value. 
+
+\section{Benchmark Model}
+\label{sec:bench}
+As a benchmark model, one could use a simple mean-model. For instance, a particular stock price can be predicted using mean of the adjusted close price. Also,  algorithms such as $k$-nearest neighbor etc., can be applied using default parameters in \texttt{scikit-learn} and then using \texttt{GridsearchCV} one could obtain optimal parameter setting. In other words, benchmark models can be based on simple parameter settings. Performance of advanced algorithms such as ensemble approaches can be tested against these benchmark models.
+
+\iffalse{
+There could be two kind of benchmarks:
+\begin{itemize}
+\item {\bf Stock price history of a ticker symbol:} \\
+Benchmark model for predicting the stock price for a certain ticker symbol is nothing but the historical price. Say we want to predict future stock price of particular symbol, say 20 days in advance.  When creating the training set,  we time align the technical indicators (described in the previous section) to the Y (in this case the stock price) to 20 days ahead. Model can be tested on the test-set (which is the data newer than the train set) and we already know the stock price for this test set (from historical data). We can measure the accuracy of the model using the metrics described in next section.
+
+\item The performance of a portfolio with a start value and then investing in the shares of stock and holding that position. Idea behind predicting the stock price is find out the best trading strategies for the stock. In other words, one needs to find out the right time to BUY (take a long position) or SELL (take a short position). This will optimize the portfolio of trader.  We can compare the machine-learning stratagies aganist the manual rule based strategies (which will be the benchmark) for optimizing the portfolio.}
+
+\end{itemize}
+\fi
+
+
+
+\section{Evaluation Metrics}
+\label{sec:metrics}
+
+Here we choose two evaluation metrics:
+
+Evaluation metrics can include root-mean-square error (RMSE), correlation coefficient. 
+
+\begin{itemize}
+
+\item {\bf RMSE}:  Mean Absolute Error (MAE), is calculated as the ratio of sum of absolute values of difference between actual value and the predicted value to number of samples. Clearly this metric indicates the average deviation of a predicted value from its actual value. This is a linear function and all errors are weighted equally.
+
+On the other hand mean-square-error (MSE), is ratio of sum of squared deviations to the number of samples, i.e., it is the mean of the squared deviation. This is a quadratic function, and if the errors are large, they are weighted more while the small errors are weighted less (say if absolute error for a sample point is less than 1, then square of the number is much smaller). Thus in a MSE based estimator, we can clearly see how the predicted values compared to the true values. MSE would be preferred performance metric over MAE especially if you want to have a model, where large errors are particularly undesirable.  Also by taking the square-root of the MSE value we get the Standard deviation, which is again helps to predict the variability of the data. 
+
+For this problem, minimizing the metric RMSE makes the stock price prediction accurate.
+
+\item {\bf Correlation}: This metric can be used to evaluate ML algorithm is to look at the relationship between predicted value vs. actual value. Let say we have a test data, and we run our model again test data to get $Y_{predict}$, which is the stock price in this case. We can now compare the $Y_{true}$ against $Y_{predict}$. By looking at the relationship between  $Y_{true}$ and $Y_{predict}$ we say if the model is correctly predicting the values. This metric is the correction function $\rho$ and it ranges between $-1 \leq \rho \leq +1$. If $\rho=1$, then they are strongly correlated; if $\rho=-1$ they are negatively correlated and if $\rho=0$, they are not correlated. 
+
+\end{itemize}
+
+
+
+
+\begin{figure}[!htbp]
+\label{fig:ridge}
+\begin{center}
+\includegraphics[height=0.5\textheight,width=\textwidth]{ridge.png}
+\caption{Prediction values for 30 days for IBM, TSLA and AAPL  using Ridge regression }
+\end{center}
+\end{figure}
+
+Left side of the RED dotted line indicates the past values, while the right side are the predicted values of the stock. 
+
+\begin{figure}[!htbp]
+\label{fig:ridge}
+\begin{center}
+\includegraphics[height=0.5\textheight,width=\textwidth]{mean.png}
+\caption{Prediction values for 30 days for IBM, TSLA and AAPL using the benchmark Mean model.}
+\end{center}
+\end{figure}
+
+\end{itemize}
+
+
+
+\section{Conclusion}
+\label{sec:con}
+
+Commodity stocks (as future work) , Reinforcement Learning (future work)
+
+\bibliography{refs}
+
+\end{document}
