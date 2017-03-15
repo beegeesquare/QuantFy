@@ -6,6 +6,8 @@
 \usepackage{minted}
 \usepackage{subcaption}
 \usepackage{pgfplots}
+\usepackage{amsmath}
+\usepackage{tikz,psfrag}
 
 \input defs.tex
 
@@ -52,6 +54,26 @@ General machine learning models that can be used for this problem are:
 \item Time-series analysis: This analysis will be used to estimate the commodity prices such as oil/gas etc. For instance we can observe long term trend in the time-series (such as exponential) and fit an exponential model to predict the future price. Using the concepts of \underline{drift} and \underline{seasonality}, build models for commodity stocks.
 \end{enumerate}
 
+\section{Project Design}
+\label{sec:design}
+
+
+Design phase of the QuantFy application consists of following phases:
+\begin{itemize}
+\item Time-series plots for the various stocks can be visualized at this link: \href{http://quantfy.herokuapp.com/price_plot}{\color{blue}{Price plot}} \cite{pp}. This link also computes various other technical indicators such as the SMA, Bollinger bands, etc.
+\item Portfolio optimizer: Analyzing using stock price data, and using numerical optimization techniques, this has already been implemented in the app. Link to the app is \href{http://quantfy.herokuapp.com/portfolio}{\color{blue}{\bf Portfolio optimizer}} \cite{po}
+
+\item Investment and Trading using machine learning: This was be built using the machine-learning stratagies such as (1) $k$-nearest neighbors (2) Random forests (3) Linear regression  and (4) Ridge regression. One can compare the performance of any two algorithms in the application. For more details, visit the application at \href{http://quantfy.herokuapp.com/mlModels}{\color{blue}{\bf ML models}}
+
+\subsection{Software}
+\begin{enumerate}
+\item Front-end: Python \texttt{flask} based web application
+\item Back-end: Python libraries, such as \texttt{scikit-learn, pandas, numpy, scipy, bokeh}.
+\item Hosting platform: Heroku
+\end{enumerate}
+
+This  application can be accessed at: \href{http://quantfy.herokuapp.com}{\color{blue}{\bf QuantFy}} \cite{qfy}. The current version of the source code for this application can be found at this GitHub link: \href{https://github.com/beegeesquare/QuantFy}{\color{blue}{\bf Source code}} \cite{sc}
+
 \section{Datasets and Inputs} 
 \label{sec:datasets}
 There are many open APIs to extract data:
@@ -70,8 +92,8 @@ Current version of QuantFy application proposes to uses Yahoo Finance source and
 \begin{figure}[!htbp]
 \begin{center}
 \includegraphics[height=0.5\textheight,width=\textwidth]{price_plot_IBM.png}
-\label{fig:ibm}
 \caption{IBM prices from Jan 1 2016, from Quandl data source}
+\label{fig:ibm_price}
 \end{center}
 \end{figure}
 
@@ -89,31 +111,23 @@ The data from these sources consists of features like:
 
 
 \begin{figure}[!htbp]
-\label{fig:tsla}
 \begin{center}
 \includegraphics[height=0.5\textheight,width=\textwidth]{price_plot_TSLA.png}
 \caption{Tesla prices from Jan 1 2016, Quandl data source}
+\label{fig:tsla}
 \end{center}
 \end{figure}
 
-
-Snapshot of the plot prices for IBM, TSLA (Tesla) and AAPL (Apple) are shown in Figure~1, 2, and 3 respectively. For more detailed refer to the application website \href{http://quantfy.herokuapp.com}{\color{blue}{\bf QuantFy}} \cite{qfy}.
-
-
-\section{Analyzing the stock price data}
-\label{sec:anal}
-
-When getting the stock price data for the ticker symbols, one need to clean the data to see if there are any un-available data points. For instance the stock has not traded a day, then it is mostly likely the exchange is closed. These \texttt{NaN} values have to be removed from the data-set. The most common way to do it this is to align the ticker symbol with the a benchmark symbol, say S\&P500 company and drop any \texttt{NaN} values in the data set. Also, we drop dates at which the S\&P500 has not traded. Sometimes the company's stock price might not be available, as it did not have an IPO (initial public offering) for the date. So we need to remove such data points as well. For example if we get the stock price of the \texttt{GOOG} from year 2010, then there will be \texttt{NaN} until year 2014. In \texttt{pandas} we can accomplish this with \texttt{df=df.dropna(axis=0)}, where \texttt{df} is the dataframe, and \texttt{dropna()} drops any values with \texttt{NaN} along the rows (\texttt{axis=0}).
-
 \begin{figure}[!htbp]
-\label{fig:aapl}
 \begin{center}
 \includegraphics[height=0.5\textheight,width=\textwidth]{price_plot_AAPL.png}
 \caption{Apple prices from Jan 1 2016, Quandl data source}
+\label{fig:aapl}
 \end{center}
 \end{figure}
 
-Table 1, shows the description of the data.
+Snapshot of the plot prices for IBM, TSLA (Tesla) and AAPL (Apple) are shown in Figure~\ref{fig:ibm_price}, \ref{fig:tsla}, and \ref{fig:aapl} respectively. For more detailed refer to the application website \href{http://quantfy.herokuapp.com}{\color{blue}{\bf QuantFy}} \cite{qfy}. Table~\ref{tab:params}, describe the parameters for the data, such as count, mean, standard deviation etc. This can is achieved using the \texttt{describe()} option in pandas.
+
 \begin{table}
 \begin{center}
 \begin{tabular} {|c|c|c|c|}
@@ -131,10 +145,20 @@ Maximum  &  151.7834 & 215.205 & 107.1624\\ \hline
 \end{tabular}
 \end{center}
 \caption{Description of the data for the stock symbols IBM, TSLA, AAPL}
+\label{tab:params}
 \end{table}
 
+\section{Analyzing the stock price data}
+\label{sec:anal}
 
-There are four features related to the prices, but we use adjusted close price is what we use for the rest of the discussion. Along with these features, one could compute other features like:
+When getting the stock price data for the ticker symbols, one need to clean the data to see if there are any un-available data points. For instance the stock has not traded a day, then it is mostly likely the exchange is closed. These \texttt{NaN} values have to be removed from the data-set. The most common way to do it this is to align the ticker symbol with the a benchmark symbol, say S\&P500 company and drop any \texttt{NaN} values in the data set. Also, we drop dates at which the S\&P500 has not traded. Sometimes the company's stock price might not be available, as it did not have an IPO (initial public offering) for the date. So we need to remove such data points as well. For example if we get the stock price of the \texttt{GOOG} from year 2010, then there will be \texttt{NaN} until year 2014. In \texttt{pandas} we can accomplish this with \texttt{df=df.dropna(axis=0)}, where \texttt{df} is the dataframe, and \texttt{dropna()} drops any values with \texttt{NaN} along the rows (\texttt{axis=0}).
+
+
+
+
+
+
+We use adjusted close price is what we use for the rest of the discussion. Along with these features, one could compute other features like:
 
 \begin{enumerate}
  \item \underline{Daily returns (DR)}: How much the price will go up or down on a particular instance of time:
@@ -179,9 +203,9 @@ Sharpe ratio & 1.49 & 0.38 & 1.23 \\ \hline
 
 \begin{figure}[!htbp]
 \begin{center}
-\includegraphics[height=0.5\textheight,width=\textwidth]{rolling_mean.png}
-\label{fig:ibm}
+\includegraphics[height=0.4\textheight,width=\textwidth]{rolling_mean.png}
 \caption{Rolling mean for the symbols IBM, TSLA and AAPL}
+\label{fig:rm}
 \end{center}
 \end{figure}
 \item \underline{Bollinger bands}: 
@@ -207,10 +231,11 @@ Sharpe ratio varies depending on how frequently you sample the data. $sr_f=k\tim
 \item \underline{Volatility} is nothing but the standard deviation of the daily returns.
 
 \begin{figure}[!htbp]
-\label{fig:tsla}
+
 \begin{center}
-\includegraphics[height=0.5\textheight,width=\textwidth]{rolling_sd.png}
+\includegraphics[height=0.4\textheight,width=\textwidth]{rolling_sd.png}
 \caption{Rolling standard deviation ($\sigma$) for the symbols IBM, TSLA and AAPL}
+\label{fig:std}
 \end{center}
 \end{figure}
 
@@ -220,63 +245,61 @@ Sharpe ratio varies depending on how frequently you sample the data. $sr_f=k\tim
 where $N$ is the size of the window.
 \end{enumerate}
 
-Below are some of the plot obtained for IBM, TSLA and AAPL are shown in Fig.~4, 5, and 6 respectively. For more details, refer to the application website \cite{qfy}
+Plots for rolling mean, rolling standard deviation and bollinger-bands are show in  Fig.~\ref{fig:rm}, \ref{fig:std}, and \ref{fig:bb} for IBM, TSLA and AAPL. For more details, refer to the application website \cite{pp}
 
 \begin{figure}[!htbp]
-\label{fig:aapl}
 \begin{center}
 \includegraphics[height=0.5\textheight,width=\textwidth]{rolling_bb.png}
 \caption{Bollinger bands IBM, TSLA and AAPL; upper are shown in solid lines and lower bands are shown in dotted lines }
+\label{fig:bb}
 \end{center}
 \end{figure}
-
-\section{Project Design}
-\label{sec:design}
-
-
-Design phase of the QuantFy application consists of following phases:
-\begin{itemize}
-\item Time-series plots for the various stocks can be visualized at this link: \href{http://quantfy.herokuapp.com/price_plot}{\color{blue}{Price plot}} \cite{pp}. This link also computes various other technical indicators such as the SMA, Bollinger bands, etc.
-\item Portfolio optimizer: Analyzing using stock price data, and using numerical optimization techniques, this has already been implemented in the app. Link to the app is \href{http://quantfy.herokuapp.com/portfolio}{\color{blue}{\bf Portfolio optimizer}} \cite{po}
-
-\item Investment and Trading using machine learning: This was be built using the machine-learning stratagies such as (1) $k$-nearest neighbors (2) Random forests (3) Linear regression  and (4) Ridge regression. One can compare the performance of any two algorithms in the application. For more details, visit the application at \href{http://quantfy.herokuapp.com/mlModels}{\color{blue}{\bf ML models}}
-
-\subsection{Software}
-\begin{enumerate}
-\item Front-end: Python \texttt{flask} based web application
-\item Back-end: Python libraries, such as \texttt{scikit-learn, pandas, numpy, scipy, bokeh}.
-\item Hosting platform: Heroku
-\end{enumerate}
-
-This  application can be accessed at: \href{http://quantfy.herokuapp.com}{\color{blue}{\bf QuantFy}} \cite{qfy}. The current version of the source code for this application can be found at this GitHub link: \href{https://github.com/beegeesquare/QuantFy}{\color{blue}{\bf Source code}} \cite{sc}
-
-
 
 \section{Algorithms used in the project}
 \label{sec:algos}
 
+This section provides brief description of the algorithms used in this project.
+
 \subsection{Convex Optimization}
 \label{sec:convex}
+A real-valued function defined on an interval is said to be convex if the line-segment between two points on the graph of the function lies above or on the graph. More formally, let $\mathbf{X}$ be a convex set in a real vector space and let $f: \mathbf{X}\rightarrow \mathbb{R}$ be a function, then $f$ is called \textbf{convex} if:
 
-\subsection{Linear regression}
-\label{sec:lr}
+\[\forall x_1,x_2 \in \mathbf{X}, \forall t \in [0,1]: f(tx_1+(1-t)x_2) \leq tf(x_1)+(1-t)f(x_2 )\]
 
-\subsection{Random forest regression}
-\label{sec:rfr}
+In finance and economics, $convex$ $optimization$ plays an important role. Convex optimization algorithms are easy to solve, since they have one local minimum, which is also a global minimum. They can be solved using gradient-descent or other numerical optimizations as Sequential Least SQuare Programming (SLSQP). Fig.~\ref{fig:convex} shows an example of the convex function.
 
-\subsection{$k$-nearest neighbors}
-\label{sec:knn}
-
-\subsection{Ridge regression}
-\label{sec:rr}
-
-\section{Methodology}
-\label{sec:method}
-
-
-
-\section{Portfolio optimization}
-\label{sec:opt}
+\begin{figure}[!htbp]
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[
+        legend pos=north west,
+        axis x line=middle,
+        axis y line=middle,
+        y tick label style={/pgf/number format/fixed,
+                            /pgf/number format/fixed zerofill,
+                            /pgf/number format/precision=1},
+        grid = major,
+        width=15cm,
+        height=8cm,
+        grid style={dashed, gray!30},
+        xmin=0,     % start the diagram at this x-coordinate
+        xmax= 5,     % end   the diagram at this x-coordinate
+        ymin= 0,     % start the diagram at this y-coordinate
+        ymax= 8,     % end   the diagram at this y-coordinate
+        %axis background/.style={fill=white},
+        xlabel=$x$,
+        ylabel=f$(x)$ ,
+        tick align=outside,
+        enlargelimits=true]
+      % plot the stirling-formulae
+      \addplot[domain=-5:5, red, ultra thick,samples=500] {(x-1.5)^2+0.5};
+       \addplot[domain=-5:5, blue, ultra thick,samples=500]{0.75*x+2};
+\end{axis}
+\end{tikzpicture}
+\caption{Example of the convex function $f(x)=(x-1.5)^2+0.5$.}
+\label{fig:convex}
+\end{center}
+\end{figure}
 
 \begin{itemize}
 \item Given set of assets and time-period, find allocations of funds to assets that maximizes performance.
@@ -298,7 +321,7 @@ This  application can be accessed at: \href{http://quantfy.herokuapp.com}{\color
 where $X_i$'s are allocations for each stock.
 \end{itemize}
 
-This problem is a convex optimization problem and can be solved using the numerical optimization algorithms. Below is the snippet of the optimization code in \texttt{scipy}.
+Below is the code snippet of the optimization in \texttt{scipy}.
 
 \begin{tabular}{@{}|p{12.5cm}|@{}}
 \hline
@@ -318,8 +341,65 @@ optimal_allocs=opt_allocs.x
 \hline
 \end{tabular}
 
+In this project, we are trying to predict the stock-prices for the 
 
-Portfolios in comparision with SP\&500 for the symbols, GOOG, AAPL, MSFT and IBM for duration between Jan 1 2013 to March 14 2017, for both unoptimized and optimized are shown in Fig. 7 and 8 respectively.
+\subsection{Linear regression}
+\label{sec:lr}
+
+\subsection{Random forest regression}
+\label{sec:rfr}
+
+\subsection{$k$-nearest neighbors}
+\label{sec:knn}
+
+\subsection{Ridge regression}
+\label{sec:rr}
+
+\subsection{Benchmark Model}
+\label{sec:bench}
+As a benchmark model, one could use a simple mean-model. For instance, a particular stock price can be predicted using mean of the adjusted close price. Also,  algorithms such as $k$-nearest neighbor etc., can be applied using default parameters in \texttt{scikit-learn} and then using \texttt{GridsearchCV} one could obtain optimal parameter setting. In other words, benchmark models can be based on simple parameter settings. Performance of advanced algorithms such as ensemble approaches can be tested against these benchmark models.
+
+\iffalse{
+There could be two kind of benchmarks:
+\begin{itemize}
+\item {\bf Stock price history of a ticker symbol:} \\
+Benchmark model for predicting the stock price for a certain ticker symbol is nothing but the historical price. Say we want to predict future stock price of particular symbol, say 20 days in advance.  When creating the training set,  we time align the technical indicators (described in the previous section) to the Y (in this case the stock price) to 20 days ahead. Model can be tested on the test-set (which is the data newer than the train set) and we already know the stock price for this test set (from historical data). We can measure the accuracy of the model using the metrics described in next section.
+
+\item The performance of a portfolio with a start value and then investing in the shares of stock and holding that position. Idea behind predicting the stock price is find out the best trading strategies for the stock. In other words, one needs to find out the right time to BUY (take a long position) or SELL (take a short position). This will optimize the portfolio of trader.  We can compare the machine-learning stratagies aganist the manual rule based strategies (which will be the benchmark) for optimizing the portfolio.}
+
+\end{itemize}
+\fi
+
+\section{Evaluation Metrics}
+\label{sec:metrics}
+
+Here we choose two evaluation metrics:
+
+Evaluation metrics can include root-mean-square error (RMSE), correlation coefficient. 
+
+\begin{itemize}
+
+\item {\bf RMSE}:  Mean Absolute Error (MAE), is calculated as the ratio of sum of absolute values of difference between actual value and the predicted value to number of samples. Clearly this metric indicates the average deviation of a predicted value from its actual value. This is a linear function and all errors are weighted equally.
+
+On the other hand mean-square-error (MSE), is ratio of sum of squared deviations to the number of samples, i.e., it is the mean of the squared deviation. This is a quadratic function, and if the errors are large, they are weighted more while the small errors are weighted less (say if absolute error for a sample point is less than 1, then square of the number is much smaller). Thus in a MSE based estimator, we can clearly see how the predicted values compared to the true values. MSE would be preferred performance metric over MAE especially if you want to have a model, where large errors are particularly undesirable.  Also by taking the square-root of the MSE value we get the Standard deviation, which is again helps to predict the variability of the data. 
+
+For this problem, minimizing the metric RMSE makes the stock price prediction accurate.
+
+\item {\bf Correlation}: This metric can be used to evaluate ML algorithm is to look at the relationship between predicted value vs. actual value. Let say we have a test data, and we run our model again test data to get $Y_{predict}$, which is the stock price in this case. We can now compare the $Y_{true}$ against $Y_{predict}$. By looking at the relationship between  $Y_{true}$ and $Y_{predict}$ we say if the model is correctly predicting the values. This metric is the correction function $\rho$ and it ranges between $-1 \leq \rho \leq +1$. If $\rho=1$, then they are strongly correlated; if $\rho=-1$ they are negatively correlated and if $\rho=0$, they are not correlated. 
+
+\end{itemize}
+
+
+\section{Methodology}
+\label{sec:method}
+
+
+\section{Results}
+
+\subsection{Portfolio optimization}
+\label{sec:opt}
+
+Portfolios in comparison with SP\&500 for the symbols, GOOG, AAPL, MSFT and IBM for duration between Jan 1 2013 to March 14 2017, for both unoptimized and optimized are shown in Fig. 7 and 8 respectively.
 
 
 \begin{figure}[!htbp]
@@ -369,7 +449,7 @@ Optimized allocations & 0 & 0.539 & 0.461 & 0 \\ \hline
 \caption{Parameters computed for un-optimized and optimized portfolio}
 \end{table}
 
-\section{Market Simulator}
+\subsection{Market Simulator}
 \label{sec:sim}
 Based on the orders file, the portfolio value can be analyzed. For instance if BUY or SELL order comes, depending on the stock price value of the order, the portfolio value changes. Using the leverage threshold, orders can be executed or fail to execute if the leverage value exceeds the threshold.
 
@@ -393,41 +473,10 @@ The Fig. 9 is generated using orders file located at \href{https://github.com/be
 \label{sec:solution}
 Predicts the stock prices and also measures the accuracy of these forecasts. Using back-testing a method where we roll back time and measure the accuracy of these forecasts.  Slice the sample data from (historical) training set and apply the machine learning models to get the forecast.  By comparing the predictive results of the model against the historical results,  back-testing can determine whether the model has predictive value. 
 
-\section{Benchmark Model}
-\label{sec:bench}
-As a benchmark model, one could use a simple mean-model. For instance, a particular stock price can be predicted using mean of the adjusted close price. Also,  algorithms such as $k$-nearest neighbor etc., can be applied using default parameters in \texttt{scikit-learn} and then using \texttt{GridsearchCV} one could obtain optimal parameter setting. In other words, benchmark models can be based on simple parameter settings. Performance of advanced algorithms such as ensemble approaches can be tested against these benchmark models.
-
-\iffalse{
-There could be two kind of benchmarks:
-\begin{itemize}
-\item {\bf Stock price history of a ticker symbol:} \\
-Benchmark model for predicting the stock price for a certain ticker symbol is nothing but the historical price. Say we want to predict future stock price of particular symbol, say 20 days in advance.  When creating the training set,  we time align the technical indicators (described in the previous section) to the Y (in this case the stock price) to 20 days ahead. Model can be tested on the test-set (which is the data newer than the train set) and we already know the stock price for this test set (from historical data). We can measure the accuracy of the model using the metrics described in next section.
-
-\item The performance of a portfolio with a start value and then investing in the shares of stock and holding that position. Idea behind predicting the stock price is find out the best trading strategies for the stock. In other words, one needs to find out the right time to BUY (take a long position) or SELL (take a short position). This will optimize the portfolio of trader.  We can compare the machine-learning stratagies aganist the manual rule based strategies (which will be the benchmark) for optimizing the portfolio.}
-
-\end{itemize}
-\fi
 
 
 
-\section{Evaluation Metrics}
-\label{sec:metrics}
 
-Here we choose two evaluation metrics:
-
-Evaluation metrics can include root-mean-square error (RMSE), correlation coefficient. 
-
-\begin{itemize}
-
-\item {\bf RMSE}:  Mean Absolute Error (MAE), is calculated as the ratio of sum of absolute values of difference between actual value and the predicted value to number of samples. Clearly this metric indicates the average deviation of a predicted value from its actual value. This is a linear function and all errors are weighted equally.
-
-On the other hand mean-square-error (MSE), is ratio of sum of squared deviations to the number of samples, i.e., it is the mean of the squared deviation. This is a quadratic function, and if the errors are large, they are weighted more while the small errors are weighted less (say if absolute error for a sample point is less than 1, then square of the number is much smaller). Thus in a MSE based estimator, we can clearly see how the predicted values compared to the true values. MSE would be preferred performance metric over MAE especially if you want to have a model, where large errors are particularly undesirable.  Also by taking the square-root of the MSE value we get the Standard deviation, which is again helps to predict the variability of the data. 
-
-For this problem, minimizing the metric RMSE makes the stock price prediction accurate.
-
-\item {\bf Correlation}: This metric can be used to evaluate ML algorithm is to look at the relationship between predicted value vs. actual value. Let say we have a test data, and we run our model again test data to get $Y_{predict}$, which is the stock price in this case. We can now compare the $Y_{true}$ against $Y_{predict}$. By looking at the relationship between  $Y_{true}$ and $Y_{predict}$ we say if the model is correctly predicting the values. This metric is the correction function $\rho$ and it ranges between $-1 \leq \rho \leq +1$. If $\rho=1$, then they are strongly correlated; if $\rho=-1$ they are negatively correlated and if $\rho=0$, they are not correlated. 
-
-\end{itemize}
 
 
 
