@@ -152,15 +152,20 @@ def plot_stock_prices():
             # Pass user selected price features to the plot function
             script_ele,div_ele=plot_symbols(full_data,usr_price_features, 'Quandl')
             
-            computed_df=compute_params(full_data)
+            computed_df,describe_df=compute_params(full_data)
+            
+            # print describe_df
             computed_df=computed_df.round(5)
+            
             script_computed_params,div_computed_params=convert_pd_bokeh_html(computed_df.round(4))
+            script_describe,div_describe=convert_pd_bokeh_html(describe_df.round(4))
             
             script_param,div_param=plot_params(full_data)
             
             return render_template('plot_prices.html',script_symbols=script_ele,plot_div_symbols=div_ele,
                                    script_computed_params=script_computed_params,div_computed_params=div_computed_params,
-                                   script_params=script_param,plot_div_features=div_param)
+                                   script_params=script_param,plot_div_features=div_param,
+                                   script_describe=script_describe,div_describe=div_describe)
         
         elif app_quantfy.vars['data_src']=='get_data_yahoo': 
             # TODO: This needs a lot of change (pass not yet implemented)
@@ -256,7 +261,7 @@ def portfolio_page():
         
         #print cr,adr,sddr,sr,ev
         
-        param_not_opt=pd.DataFrame([cr,adr,sddr,sr,ev],index=['Cummulative Return','Additive Daily Return','Stand. Deviation Daily return',
+        param_not_opt=pd.DataFrame([cr,adr,sddr,sr,ev],index=['Cumulative Return','Average Daily Return','Stand. Deviation Daily return',
                                                           'Sharpe Ratio','End value'], columns=['Unoptimized'])
         
         script_not_opt_table,div_not_opt_table=convert_pd_bokeh_html(param_not_opt)
@@ -418,6 +423,10 @@ def compute_params(list_data_tuples):
     
     # Now compute the parameters and for each symbol in this above dataframe 
     
+    # Also get the data description using the describe feature
+    
+    describe_features=df.describe()
+    
     computed_df=pd.DataFrame(index=['CDR','ADR','STDDR','SR'],columns=df.columns)
     
     for sym in df.columns:
@@ -433,7 +442,7 @@ def compute_params(list_data_tuples):
         computed_df.ix['STDDR'][sym]=sddr
         computed_df.ix['SR'][sym]=sr
     
-    return computed_df
+    return computed_df,describe_features
 
 def plot_params(list_data_tuples):
     
@@ -454,7 +463,11 @@ def plot_params(list_data_tuples):
        
     daily_returns = util.compute_daily_returns(df)
     rolling_mean=util.get_rolling_mean(df, window=20)
+    # drop the rows where the values are 0, for instance for window 20, the first 20 are zeros
+    rolling_mean=rolling_mean[(rolling_mean.sum(axis=1)!=0)]   
     rolling_std=util.get_rolling_std(df, window=20)
+    rolling_std=rolling_std[(rolling_std.sum(axis=1)!=0)]
+    
     u_bollinger_bnd,l_bollinger_bnd=util.get_bollinger_bands(rolling_mean, rolling_std)
     
     param_dict={'Rolling mean':rolling_mean,'Rolling SD': rolling_std,'Bollinger Bands':(u_bollinger_bnd,l_bollinger_bnd),'Daily returns':daily_returns}
