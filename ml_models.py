@@ -100,7 +100,7 @@ def getMLmodels():
         metrics_df,future_df,bench_future_df,pct_tab=computeFeatures(prices_df,app_mlModels.vars['future_days'],split_number) # Prices should technically have one symbol, but also possible that they might have multiple symbols
         
         
-        print metrics_df    
+        # print metrics_df    
         # Plot the time-series graph with past and future values
         
         tab1=plotPredicted(prices_df, future_df,dict_algo_names_map[app_mlModels.vars['ml_algo']],split_number)
@@ -329,7 +329,7 @@ def buildEstimator(X_data,Y_data,ml_model):
     
     if ml_model=="lr_algo":
         
-        param_grid={'fit_intercept':['True','False']}
+        param_grid={'n_estimators':range(10,100,5)}
         
         lr_cv=GridSearchCV(LinearRegression(),param_grid=param_grid,cv=tscv,scoring=scorer)
         
@@ -353,7 +353,7 @@ def buildEstimator(X_data,Y_data,ml_model):
         return mean_reg
     
     if ml_model=="ridge_algo":
-        param_grid={'fit_intercept':['True','False'],'solver':['auto','svd','lsqr','sag'],'alpha':np.arange(0.1,1.1,0.1)}
+        param_grid={'fit_intercept':['True','False'],'solver':['auto','svd','lsqr','sag'],'alpha': np.logspace(-4., 0, 20)}
         
         ridge_cv=GridSearchCV(Ridge(),param_grid=param_grid,cv=tscv,scoring=scorer)
         
