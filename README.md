@@ -9,7 +9,8 @@ Also, when uploding a new file for Market Simulator, make sure you click "Upload
 
 A detailed report is  also available at:https://github.com/beegeesquare/QuantFy/blob/master/docs/report/report.pdf
 
-## The following libraries are used in the project (There is also a requirements file in the repo)
+## The following libraries are used in the project 
+### There is also a requirements file in the repo
 - flask
 - numpy
 - bokeh
