@@ -29,6 +29,10 @@ QuantFy is an application (app) that would build predictive/optimized models usi
 \newpage
 \tableofcontents
 \newpage
+\listoffigures
+\newpage
+\listoftables
+\newpage
 
 This is description document for the Capstone project for Machine Learning Nanodegree program of Udacity. 
 
@@ -80,14 +84,14 @@ There are many open APIs to extract data:
 \begin{enumerate}
 \item Yahoo Finance:
 \begin{enumerate}
-\item Using the http://ichart.finance.yahoo.com/table.csv?s=\{YOUR\_SYMBOL\} we can query and get historical data.
-\item We can also use yahoo\_finance python library or,
-\item We can also use pandas\_datareader
+\item Using an API call  \texttt{http://ichart.finance.yahoo.com/table.csv?s=\{YOUR\_SYMBOL\} }we can query and get historical data.
+\item We can also use \texttt{yahoo\_finance} python library or,
+\item We can also use \texttt{pandas\_datareader}
 \end{enumerate}
-\item Quandl: Using quandl python API we can get the historical data
+\item Quandl: Using \texttt{quandl} python API we can get the historical data
 \item Bloomberg API
 \end{enumerate}
-Current version of QuantFy application proposes to uses Yahoo Finance source and Quandl to get historical data. One can extract more than 10 years of historical stock prices for many ticker symbols. This data is obtained using appropriate API calls to the sources (listed below). 
+Current version of QuantFy application proposes to uses Quandl to get historical data and Yahoo Finance source will be added in the subsequent versions. One can extract more than 10 years of historical stock prices for many ticker symbols. 
 
 \begin{figure}[!htbp]
 \begin{center}
@@ -97,15 +101,13 @@ Current version of QuantFy application proposes to uses Yahoo Finance source and
 \end{center}
 \end{figure}
 
-For instance user can the date range for viewing the stock prices of ticker symbols. Then an request call will be made and acquired data will be converted into a \texttt{pandas}  dataframe. This data will also be stored locally, using python libraries such as \texttt{ediblepickle}, so when the same request is made (no change in the parameters), data is retrieved locally. Since the data is generated online (rather than locally available data), we are not particularly concerned about the storing the data. At least from the past experience, the stock price data can be easily stored in the dataframe without any memory errors. We anticipate that the historical prices for the each ticker symbol will be in the order of less than 1 MB.
+For instance user can specify the date range for viewing the stock prices of ticker symbols. Then an request call will be made and acquired data will be converted into a \texttt{pandas}  dataframe. This data will also be stored locally, using python libraries such as \texttt{ediblepickle}, so when the same request is made (no change in the parameters), data is retrieved locally. Since the data is generated online (rather than locally available data), we are not particularly concerned about the storing the data. At least from the past experience, the stock price data can be easily stored in the dataframe without any memory errors. We anticipate that the historical prices for the each ticker symbol will be in the order of less than 1 MB.
 
 \begin{enumerate}
 \item Close price and/or Adjusted close price
 \item Start price and/or Adjusted start price,
 \item Opening price  and/or adjusted opening price
 \end{enumerate}
-
-
 
 The data from these sources consists of features like:
 
@@ -162,21 +164,35 @@ We use adjusted close price is what we use for the rest of the discussion. Along
 
 \begin{enumerate}
  \item \underline{Daily returns (DR)}: How much the price will go up or down on a particular instance of time:
-\[ r(t)=\frac{p(t)}{p(t-1)}-1,
-\]
+ \begin{equation}
+ \label{eq:dr}
+r(t)=\frac{p(t)}{p(t-1)}-1,
+\end{equation}
+
 where $p(t)$ is the price at time $t$.
+
 \item \underline{Average daily return (ADR)}: This is simply the average value of the the daily returns.
-\[ adr = \frac{\Sigma_{t=1}^{N} r(t)}{N}\]
+\begin{equation}
+ \label{eq:adr}
+  adr = \frac{\Sigma_{t=1}^{N} r(t)}{N}
+\end{equation}
 
 \item \underline {Cumulative daily return (CDR)}: Defined as the ratio of the final value of the the daily return to the initial value of the daily return 
-
-\[ cdr= \frac{r(N)}{r(0)},\] where $N$ is the last sample point in the series.
+\begin{equation}
+ \label{eq:cdr}
+cdr= \frac{r(N)}{r(0)},
+\end{equation} 
+where $N$ is the last sample point in the series.
 
 \item \underline {Standard deviation of DR}: It is simply the standard deviation of the daily return ($r(t)$), which is the square-root of the variance.
 
 \item\underline{Cumulative return} is given by,
-\[ cr(t)=\frac{p(t)}{p(0)}-1
-\]
+
+\begin{equation}
+ \label{eq:cr}
+ cr(t)=\frac{p(t)}{p(0)}-1
+\end{equation}
+
 \item \underline{Simple moving average (SMA)}: Also know as moving average
   {\small \begin{minted}{python}
 rolling_df=pd.DataFrame(index=df.index)
@@ -208,27 +224,46 @@ Sharpe ratio & 1.49 & 0.38 & 1.23 \\ \hline
 \label{fig:rm}
 \end{center}
 \end{figure}
+
 \item \underline{Bollinger bands}: 
 
- \[ U_{band}=m_r+2\times\sigma_r, \]
-\[ L_{band}=m_r-2\times\sigma_r \]
+\begin{eqnarray}
+\label{eq:bb}
+ U_{band}& = & m_r+2\times\sigma_r, \nonumber \\
+L_{band}& = &m_r-2\times\sigma_r
+\end{eqnarray}
 
 where $m_r$ is the rolling mean and $\sigma_r$ is the rolling standard-deviation of the adjusted close price.
 
 \item \underline{Normalized Bollinger bands}: Value varies between -1.0 and 1.0.
 
-\[ bb_{norm}=\frac{price[t]-SMA[t]}{2\times\sigma[t]}		\]
+\begin{equation}
+ \label{eq:bb_norm}
+ bb_{norm}=\frac{price[t]-SMA[t]}{2\times\sigma[t]}
+ \end{equation}
 
 where $\sigma$ is the rolling standard deviation and $SMA$ is the simple moving average. 
 
 \item \underline{Sharpe ratio} This metric adjusts the return for risk, also know as risk adjusted reward.
-\[ 
+\begin{equation}
+ \label{eq:sr}
 	sr= \frac{R_p-R_f}{\sigma_p},
-\]
+\end{equation}
+
 where $R_p$ is the portfolio return, $R_f$ is risk-free return and $\sigma_p$ is the standard deviation of portfolio return. 
-\[ sr=\frac{E[R_p-R_f]}{\sigma[R_p-R_f]} \]
+\begin{equation}
+ \label{eq:sr}
+ sr=\frac{E[R_p-R_f]}{\sigma[R_p-R_f]}
+ \end{equation}
+ 
 Sharpe ratio varies depending on how frequently you sample the data. $sr_f=k\times sr$, where $k=\sqrt{\mbox{\# samples/year}}$
+
 \item \underline{Volatility} is nothing but the standard deviation of the daily returns.
+
+\begin{equation}
+ \label{eq:vol}
+ v(t)=\sqrt{var[r(t)]}
+ \end{equation}
 
 \begin{figure}[!htbp]
 
@@ -239,9 +274,13 @@ Sharpe ratio varies depending on how frequently you sample the data. $sr_f=k\tim
 \end{center}
 \end{figure}
 
-\item Momemtum is defined as:
-\[ r(t)=\frac{p(t)}{p(t-N)}-1
-\]
+\item \underline{Momentum} is defined as:
+
+\begin{equation}
+ \label{eq:mtm}
+r(t)=\frac{p(t)}{p(t-N)}-1
+\end{equation}
+
 where $N$ is the size of the window.
 \end{enumerate}
 
@@ -341,34 +380,90 @@ optimal_allocs=opt_allocs.x
 \hline
 \end{tabular}
 
-In this project, we are trying to predict the stock-prices for the 
+
+\vspace{0.2in}
+
+In this project, we are trying to predict the stock- future prices values, using certain features such as  Volatility Eq.~(\ref{eq:vol}), Momentum Eq.~(\ref{eq:mtm}) and Normalized Bollinger Bands (BB) Eq.~(\ref{eq:bb_norm}). This problem will be a regression problem, as the output that we are trying to predict is a real-number. The next part of the section describes the details of the algorithms that we use in this project. Also the problem of stock prediction falls under the category of supervised learning problem, as we are given with the $y_i$ label set. In other words we trying to build a model $f$, while mapping the feature row $X_j$ to each label $y_j$, so that:
+
+\[ f(X_j) \approx y_j \]
+
+Regression algorithms can be of two types:
+\begin{enumerate}
+\item \underline{Parametric}: In this type of algorithms we use data to calculate/estimate the parameters of an equation such as $y=m\times x +c$, where $m$ is the slope of the line and $c$ is the y-intercept. Linear regression, Random-forest are examples of parametric regression algorithms.
+\\
+\underline{Pros and Cons}:
+\begin{itemize}
+\item We do not have to store the original data, so these algorithms are space efficient.
+\item We cannot easily update the model as more data is gathered. We have to do complete rerun of the learning algorithm to update. Thus training usually is slow, but querying (or predicting) is fast.
+\end{itemize}
+\item \underline{Non-parametric}: In this type of algorithms we take the data to construct the information rather than using the predetermined model. Algorithms such as $k$-nearest neighbor is an example.
+\\
+\underline{Pros and Cons}:
+\begin{itemize}
+\item We have to store all the data points. So for huge datasets it is inefficient
+\item But as the new evidence comes, the model can be easily trained. 
+\end{itemize}
+\end{enumerate}
+
 
 \subsection{Linear regression}
 \label{sec:lr}
+In the simplest form the Linear regression can be expressed as :
+
+\begin{equation}
+\label{eq:lr}
+f(\mathbf{X_j})=\Sigma_i\beta_i \mathbf{X_{ji}},
+\end{equation}
+where $\beta_j$ are the co-efficients.
+
+\begin{figure}[!htbp]
+\begin{center}
+\includegraphics[height=0.4\textheight,width=\textwidth]{lr_momentum_fit.png}
+\caption{Scatter plot of $y_{true}$ values vs predicted values of $y$ using linear regression for IBM stock. }
+\label{fig:lr_example}
+\end{center}
+\end{figure}
+
+The Figure~\ref{fig:lr_example} shows the example of linear regression fit for the IBM ticket symbol using the momentum feature. The linear fit shown in Figure~\ref{fig:lr_example} indicates that the data exhibits a lot of non-linearity and Linear regression might not give a good estimate of the  stock prediction. We will discuss the metrics used for model evaluation in Section~\ref{sec:metrics}.
+
+\subsection{Ridge regression}
+\label{sec:rr}
+Ridge regression shrinks the regression coefficients by imposing a penalty on the their size \cite{ESL2}. The coefficients minimize a penalized residual sum squares.  
+Ridge model solves the regression model where the loss function is the linear least-squares function and the regularization is given by the $L^2$ norm \cite{scikit-ridge}.
 
 \subsection{Random forest regression}
 \label{sec:rfr}
 
-\subsection{$k$-nearest neighbors}
+Random forests are ensemble (or collection) of decision trees, that output mean prediction (regression) of the individual tree for regression problems. The idea is to average many noisy but approximately unbiased models and thus reduce the variance  \cite{ESL2}.  Random-forests regressions are quite efficient especially where the data is non-linear. In the the Fig. \ref{fig:lr_example}, we have seen that the momentum is quite non-linear and thus not surprisingly, the linear-regression and so does the ridge did not work well. Figure \ref{fig:rfr_example} shows the fit for Random-forests, and this clearly indicates that predictions are clearly close enough to the true values.
+
+\begin{figure}[!htbp]
+\begin{center}
+\includegraphics[height=0.4\textheight,width=\textwidth]{rfr_momentum_fit.png}
+\caption{Scatter plot of $y_{true}$ values vs predicted values of $y$ using Random forest regression for IBM stock. Circles indicate true values and $+$ indicates the predicated values. }
+\label{fig:rfr_example}
+\end{center}
+\end{figure}
+
+
+\subsection{$k$-nearest neighbors (kNN)}
 \label{sec:knn}
 
-\subsection{Ridge regression}
-\label{sec:rr}
+As the name implies, the prediction for a new point is based on the closest $k$-points in the training set, where closest is usually defined in terms of Euclidiean distance on the $\mathbf{p}$ dimensional feature space. As the regression problem, it take the average label of the nearest $k$-neighbors. This is a non-parametric algorithm as discussed in the earlier part of the section. From the Fig. \ref{fig:knn_example}, we see that kNN performs almost similar to Random forest regression, capturing the non-linearities in the data.
+
+\begin{figure}[!htbp]
+\begin{center}
+\includegraphics[height=0.4\textheight,width=\textwidth]{knn_momentum_fit.png}
+\caption{Scatter plot of $y_{true}$ values vs predicted values of $y$ using $k$ nearest neighbors for IBM stock. Circles indicate true values and $+$ indicates the predicated values. }
+\label{fig:knn_example}
+\end{center}
+\end{figure}
+
 
 \subsection{Benchmark Model}
 \label{sec:bench}
-As a benchmark model, one could use a simple mean-model. For instance, a particular stock price can be predicted using mean of the adjusted close price. Also,  algorithms such as $k$-nearest neighbor etc., can be applied using default parameters in \texttt{scikit-learn} and then using \texttt{GridsearchCV} one could obtain optimal parameter setting. In other words, benchmark models can be based on simple parameter settings. Performance of advanced algorithms such as ensemble approaches can be tested against these benchmark models.
+As a benchmark model, one could use a simple mean-model. For instance, a particular stock price can be predicted using mean of the adjusted close price. This  is the simplistic baseline model. This can be implemented using the \texttt{DummyRegressor} \cite{scikit-dummy} in \texttt{scikit-learn}.
 
-\iffalse{
-There could be two kind of benchmarks:
-\begin{itemize}
-\item {\bf Stock price history of a ticker symbol:} \\
-Benchmark model for predicting the stock price for a certain ticker symbol is nothing but the historical price. Say we want to predict future stock price of particular symbol, say 20 days in advance.  When creating the training set,  we time align the technical indicators (described in the previous section) to the Y (in this case the stock price) to 20 days ahead. Model can be tested on the test-set (which is the data newer than the train set) and we already know the stock price for this test set (from historical data). We can measure the accuracy of the model using the metrics described in next section.
 
-\item The performance of a portfolio with a start value and then investing in the shares of stock and holding that position. Idea behind predicting the stock price is find out the best trading strategies for the stock. In other words, one needs to find out the right time to BUY (take a long position) or SELL (take a short position). This will optimize the portfolio of trader.  We can compare the machine-learning stratagies aganist the manual rule based strategies (which will be the benchmark) for optimizing the portfolio.}
-
-\end{itemize}
-\fi
 
 \section{Evaluation Metrics}
 \label{sec:metrics}
@@ -393,6 +488,7 @@ For this problem, minimizing the metric RMSE makes the stock price prediction ac
 \section{Methodology}
 \label{sec:method}
 
+\subsection{Cross-validation of time-series data}
 
 \section{Results}
 
@@ -468,6 +564,8 @@ where $sp$ is defined as all-stock positions \cite{GeTechCourse}.
 \end{figure}
 
 The Fig. 9 is generated using orders file located at \href{https://github.com/beegeesquare/QuantFy/blob/master/orders/orders_demo.csv}{\color{blue}{\bf Orders-demo}}
+
+\subsection{Machine-learning model comparison}
 
 \section{Solution Statement}
 \label{sec:solution}
