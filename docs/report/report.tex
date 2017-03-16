@@ -303,7 +303,10 @@ This section provides brief description of the algorithms used in this project.
 \label{sec:convex}
 A real-valued function defined on an interval is said to be convex if the line-segment between two points on the graph of the function lies above or on the graph. More formally, let $\mathbf{X}$ be a convex set in a real vector space and let $f: \mathbf{X}\rightarrow \mathbb{R}$ be a function, then $f$ is called \textbf{convex} if:
 
-\[\forall x_1,x_2 \in \mathbf{X}, \forall t \in [0,1]: f(tx_1+(1-t)x_2) \leq tf(x_1)+(1-t)f(x_2 )\]
+\begin{equation}
+\label{eq:convex}
+\forall x_1,x_2 \in \mathbf{X}, \forall t \in [0,1]: f(tx_1+(1-t)x_2) \leq tf(x_1)+(1-t)f(x_2 )
+\end{equation}
 
 In finance and economics, $convex$ $optimization$ plays an important role. Convex optimization algorithms are easy to solve, since they have one local minimum, which is also a global minimum. They can be solved using gradient-descent or other numerical optimizations as Sequential Least SQuare Programming (SLSQP). Fig.~\ref{fig:convex} shows an example of the convex function.
 
@@ -335,7 +338,7 @@ In finance and economics, $convex$ $optimization$ plays an important role. Conve
        \addplot[domain=-5:5, blue, ultra thick,samples=500]{0.75*x+2};
 \end{axis}
 \end{tikzpicture}
-\caption{Example of the convex function $f(x)=(x-1.5)^2+0.5$.}
+\caption{Example of the convex function $f(x)=(x-1.5)^2+0.5$. The blue line describes the property of convex function in Eq.~(\ref{eq:convex})}
 \label{fig:convex}
 \end{center}
 \end{figure}
@@ -468,43 +471,151 @@ As a benchmark model, one could use a simple mean-model. For instance, a particu
 \section{Evaluation Metrics}
 \label{sec:metrics}
 
-Here we choose two evaluation metrics:
-
-Evaluation metrics can include root-mean-square error (RMSE), correlation coefficient. 
+In the previous section, we talked about the different models that can be used for the problem of stock-price prediction. The problem of stock price prediction is not just limited to the list mentioned in Section~\ref{sec:algos}, there are many other algorithms that can be applied. But, the important question is, how can one test and compare the performance of these algorithms/models. For this problem of regression we choose two important evaluation metrics:
 
 \begin{itemize}
-
-\item {\bf RMSE}:  Mean Absolute Error (MAE), is calculated as the ratio of sum of absolute values of difference between actual value and the predicted value to number of samples. Clearly this metric indicates the average deviation of a predicted value from its actual value. This is a linear function and all errors are weighted equally.
+\item \textbf{Root-mean-square error (RMSE)}: Mean Absolute Error (MAE), is calculated as the ratio of sum of absolute values of difference between actual value and the predicted value to number of samples. Clearly this metric indicates the average deviation of a predicted value from its actual value. This is a linear function and all errors are weighted equally.
 
 On the other hand mean-square-error (MSE), is ratio of sum of squared deviations to the number of samples, i.e., it is the mean of the squared deviation. This is a quadratic function, and if the errors are large, they are weighted more while the small errors are weighted less (say if absolute error for a sample point is less than 1, then square of the number is much smaller). Thus in a MSE based estimator, we can clearly see how the predicted values compared to the true values. MSE would be preferred performance metric over MAE especially if you want to have a model, where large errors are particularly undesirable.  Also by taking the square-root of the MSE value we get the Standard deviation, which is again helps to predict the variability of the data. 
 
 For this problem, minimizing the metric RMSE makes the stock price prediction accurate.
-
-\item {\bf Correlation}: This metric can be used to evaluate ML algorithm is to look at the relationship between predicted value vs. actual value. Let say we have a test data, and we run our model again test data to get $Y_{predict}$, which is the stock price in this case. We can now compare the $Y_{true}$ against $Y_{predict}$. By looking at the relationship between  $Y_{true}$ and $Y_{predict}$ we say if the model is correctly predicting the values. This metric is the correction function $\rho$ and it ranges between $-1 \leq \rho \leq +1$. If $\rho=1$, then they are strongly correlated; if $\rho=-1$ they are negatively correlated and if $\rho=0$, they are not correlated. 
-
+\item  \textbf{Correlation coefficient}: This metric can be used to evaluate ML algorithm is to look at the relationship between predicted value vs. actual value. Let say we have a test data, and we run our model again test data to get $Y_{predict}$, which is the stock price in this case. We can now compare the $Y_{true}$ against $Y_{predict}$. By looking at the relationship between  $Y_{true}$ and $Y_{predict}$ we say if the model is correctly predicting the values. This metric is the correction function $\rho$ and it ranges between $-1 \leq \rho \leq +1$. If $\rho=1$, then they are strongly correlated; if $\rho=-1$ they are negatively correlated and if $\rho=0$, they are not correlated. 
 \end{itemize}
 
 
 \section{Methodology}
 \label{sec:method}
+Financial stock, commodity stock come in the category of time-series data. Usually time-series data has characteristics such as drift, seasonality and stationarity associated with it. We will talk briefly these set of characteristics:
+
+\begin{enumerate}
+\item \textbf{Drift}: Prices of commodity stocks such as oil, gas, gold, etc., tend to inflate as the time progresses. Usually we see and exponential fit for such data. This property is called drift and price can be mathematically represented as:
+
+\begin{equation}
+\label{eqn:drift}
+X_t=e^{\mu t}
+\end{equation}
+
+We can use  $\log$ of the above equation as:
+\begin{equation}
+\label{eqn:drift2}
+X_t=\mu  t+\epsilon
+\end{equation}
+
+\item \textbf{Seasonality}: Time-series data can posses seasonal component, such as temperature data, where temperature increases in summer and decreases in winter. There is certain periodicity associated with the data. Such data can be represented using Fourier series.
+
+\begin{equation}
+\label{eqn:season}
+X_t=\alpha\sin(\omega t) + \beta\cos(\omega t)
+\end{equation}
+
+\item \textbf{Stationarity}: This means the the distribution of $X_t$ is independent of time.
+
+\end{enumerate}
+
+These characteristics of the time-series data may not be particularly relevant for the financial stock, but they can be applied for the commodity stock (which is the future extension of this work).
+
+Another important concern for the time-series is whether it is predictable. We generally assume that financial data is ergodic in nature (i.e., there is a non-zero probability that state will recur). In these time-series data we generate features with lagged data. For instance, we generate the features described in Eq.~(\ref{eq:bb_norm}), (\ref{eq:vol}), and (\ref{eq:mtm}) for a particular stock-price  with a lag of say 5 days. 
+
+After we generate the feature data, we then split the data into $train$ and $cross$-$validation$ set. Time-series again has a very different way of generating cross-validation set.  The next section describes the cross-validation methodology in the time-series data.
 
 \subsection{Cross-validation of time-series data}
+\label{sec:crossval}
+In time-series we are trying to predict the value in future. Thus the validation data has to occur \textbf{after} the training data. We just cannot pick data point at random, because there might be seasonal effects. Also we cannot have our testing set occur before the training set.
+
+The Fig.~\ref{fig:ts_xval} shows the general two methods of handling the time-series cross validation data. The module \texttt{TimeSeriesSplit} in \texttt{sklearn} creates cross-validation sets using Forward chaining method in Fig.~\ref{fig:ts_xval}.
+
+\begin{figure}[!htbp]
+\begin{center}
+\includegraphics[height=0.4\textheight,width=\textwidth]{ts_xval.png}
+\caption{Sliding window Vs. Forward chaining method}
+\label{fig:ts_xval}
+\end{center}
+\end{figure}
+
+\subsection{Tuning of hyperparameters}
+\label{sec:hyper}
+Another important aspect of the machine learning algorithms is tuning of hyper-parameters. Every algorithm has certain set of input arguments (or parameters) that needs to be tuned in order to improve the performance of the model. In the regression problem, we choose to minimize the mean-square error (Section~\ref{sec:metrics}). The mimimum value of MSE can be achieved cross-validating and carefully tuning the parameters of the regressor. The optimal parameter (or the best estimator) can be obtained using \texttt{GridSearchCV} \cite{grid} module in \texttt{sklearn}. In this section we describe the performance of the machine-learning algorithm for different values hyper-parameters.
+
+\subsubsection{$k$-nearest neighbors}
+In kNN algorithm, the important parameter that needs to be tuned is number of nearest neighbors that we want to choose in the algorithm. We cannot fix number of nearest neighbors, as it can change depending of the what stock (or ticker symbol) we choose. For instance IBM ticker symbol may give minimum MSE at different number of neighbors than TSLA (Tesla). So, instead of hard coding the regressor with the number of neighbors, we use \texttt{GridSearchCV} with parameter grid, so that regressor picks an optimal hyper-parameter for any given ticker symbol. The Fig.~\ref{fig:knn_hyper} shows the optimal value of the nearest neighbor (i.e., when the MSE is at its minimum value). The MSE plotted in the Fig.~\ref{fig:knn_hyper} is the mean MSE for all the cross-validation sets. In this and subsequent examples we have chosen 5 cross-validation folds (\texttt{TimeSeriesSplit(n\_splits=5)}).
+
+\begin{figure}[!htbp]
+\begin{center}
+\includegraphics[height=0.4\textheight,width=\textwidth]{knn_mse_neighbors_IBM_TSLA.png}
+\caption{For IBM stock the minimum value of the MSE occurs at 10 while for TSLA it occurs at $\approx$ 6}
+\label{fig:knn_hyper}
+\end{center}
+\end{figure}
+
+\subsubsection{Random forest regressor}
+\label{sec:hyper_rfr}
+In Random forest regressor, the parameter that can be tuned to improve the performance of the algorithm is number of trees or number of estimators \texttt{n\_estimators}. The Fig.~\ref{fig:rfr_hyper} shows the variation of MSE as the number of estimators is changed in the model.
+
+\begin{figure}[!htbp]
+\begin{center}
+\includegraphics[height=0.4\textheight,width=\textwidth]{rfr_mse_estimators_IBM_TSLA.png}
+\caption{For IBM stock the minimum value of the MSE occurs at 32, while for TSLA it occurs at 84 estimators}
+\label{fig:rfr_hyper}
+\end{center}
+\end{figure}
+
+\subsubsection{Ridge regression}
+\label{sec:hyper_rr}
+In Ridge regression, the parameter that needs to be tuned is the regularization term $\alpha$. We have considered $\alpha$ in the range of $10^{-4} \leq \alpha \leq 1$. The Fig.~\ref{fig:ridge_hyper}, shows the variation of MSE with respect to $\alpha$. The regularization term is varied using the $\log$-scale, \texttt{np.logspace(-4., 0, 20)}.
+
+
+\begin{figure}[!htbp]
+\begin{center}
+\includegraphics[height=0.4\textheight,width=\textwidth]{ridge_mse_alpha_IBM_TSLA.png}
+\caption{For IBM stock the minimum value of the MSE occurs at $10^{-4}$, while for TSLA it occurs at 1.0 value of $\alpha$}
+\label{fig:ridge_hyper}
+\end{center}
+\end{figure}
 
 \section{Results}
+
+In this section we discuss various results obtained for portfolio optimization, market simulator, and machine learning models. The first two subsections ~\ref{sec:opt} and ~\ref{sec:sim}, though not directly related to the the concepts of machine-learning. These two sections will be particularly important to make the trading strategies, based on the prediction values obtained from the machine learning models. For instance if the machine learning model forecasts with certain accuracy that the stock price is going to increase in next 5 days, then the trader can make decisions to buy and those improve the portfolio performance of the client. This will be the future extensions of this work.
+
 
 \subsection{Portfolio optimization}
 \label{sec:opt}
 
-Portfolios in comparison with SP\&500 for the symbols, GOOG, AAPL, MSFT and IBM for duration between Jan 1 2013 to March 14 2017, for both unoptimized and optimized are shown in Fig. 7 and 8 respectively.
-
+Portfolios in comparison with SP\&500 for the symbols, GOOG, AAPL, MSFT and IBM for duration between Jan 1 2013 to March 14 2017, for both unoptimized and optimized are shown in Fig. \ref{fig:unoptimized} and \ref{fig:optimized} respectively.
 
 \begin{figure}[!htbp]
-\label{fig:unoptimized}
 \begin{center}
 \includegraphics[height=0.5\textheight,width=\textwidth]{unoptimized.png}
 \caption{Unoptimized portfolio for GOOG, AAPL, MSFT and IBM in comparison with SP\&500, with a start value of \$10000}
+\label{fig:unoptimized}
 \end{center}
 \end{figure}
+
+In Fig.~\ref{fig:unoptimized}, the allocations for the ticker symbols were chosen between an uniform random variables $\sim U[0,1]$, such that the sum is equals to 1. The first row in the Table~\ref{tab:alloc}, gives the random allocations. In the app  \href{http://quantfy.herokuapp.com/portfolio}{\color{blue}{http://quantfy.herokuapp.com/portfolio}} user can also pick his/her choice of the allocations. If none were chosen then the random allocations are made. From Fig.~\ref{fig:unoptimized}, we see that in the first half the graph, the portfolio is performing close S\&P500 (SPY). The parameter for unoptimized portfolio are given in Table~\ref{tab:portparam}.
+
+\begin{table}
+\begin{center}
+\begin{tabular} {|c|c|c|c|c|}
+\hline \hline
+\textbf{Metric} & \textbf{GOOG} & \textbf{AAPL} & \textbf{MSFT} & \textbf{IBM} \\ \hline
+Random allocations & 0.4682 & 0.1894 &0.2449 &0.0975 \\ \hline
+Optimized allocations & 0 & 0.539 & 0.461 & 0 \\ \hline
+\hline
+\end{tabular}
+\end{center}
+\caption{Parameters computed for un-optimized and optimized portfolio}
+\label{tab:alloc}
+\end{table}
+
+When we optimize the portfolio, via maximizing the Sharpe ratio, we can do a better allocation for the chosen ticker symbols.  Figure~\ref{fig:optimized} clearly improves the performance over the SPY. The optimized portfolio only allocates assets to AAPL and MSFT as given in Table~\ref{tab:alloc}. The parameters for the optimized portfolio are given in Table ~\ref{tab:portparam}. This shows an improvement in the end value over the un-optimized portfolio. Also, since we are maximizing the Sharpe ratio, we see an improvement in the value.
+
+\begin{figure}[!htbp]
+\begin{center}
+\includegraphics[height=0.5\textheight,width=\textwidth]{optimized.png}
+\caption{Optimized portfolio for GOOG, AAPL, MSFT and IBM in comparison with SP\&500}
+\label{fig:optimized}
+\end{center}
+\end{figure}
+
 
 \begin{table}
 \begin{center}
@@ -520,30 +631,10 @@ End value & \$160651.061 & \$185068.0823 \\ \hline
 \end{tabular}
 \end{center}
 \caption{Parameters computed for un-optimized and optimized portfolio}
+\label{tab:portparam}
 \end{table}
 
 
-
-\begin{figure}[!htbp]
-\label{fig:optimized}
-\begin{center}
-\includegraphics[height=0.5\textheight,width=\textwidth]{optimized.png}
-\caption{Optimized portfolio for GOOG, AAPL, MSFT and IBM in comparison with SP\&500}
-\end{center}
-\end{figure}
-
-\begin{table}
-\begin{center}
-\begin{tabular} {|c|c|c|c|c|}
-\hline \hline
-\textbf{Metric} & \textbf{GOOG} & \textbf{AAPL} & \textbf{MSFT} & \textbf{IBM} \\ \hline
-Random allocations & 0.4682 & 0.1894 &0.2449 &0.0975 \\ \hline
-Optimized allocations & 0 & 0.539 & 0.461 & 0 \\ \hline
-\hline
-\end{tabular}
-\end{center}
-\caption{Parameters computed for un-optimized and optimized portfolio}
-\end{table}
 
 \subsection{Market Simulator}
 \label{sec:sim}
@@ -556,56 +647,141 @@ Leverage value is defined as:
 where $sp$ is defined as all-stock positions \cite{GeTechCourse}. 
 
 \begin{figure}[!htbp]
-\label{fig:optimized}
 \begin{center}
 \includegraphics[height=0.5\textheight,width=\textwidth]{market.png}
 \caption{Market simulator for a order file. The green vertical lines indicate a BUY order and RED vertical lines indicate a SELL order }
 \end{center}
+\label{fig:sim}
 \end{figure}
 
-The Fig. 9 is generated using orders file located at \href{https://github.com/beegeesquare/QuantFy/blob/master/orders/orders_demo.csv}{\color{blue}{\bf Orders-demo}}
+The Fig. 9 is generated using orders file located at:
+\\
+\href{https://github.com/beegeesquare/QuantFy/blob/master/orders/orders_demo.csv}{\color{blue}{https://github.com/beegeesquare/QuantFy/blob/master/orders/orders\_demo.csv}}
+
+
 
 \subsection{Machine-learning model comparison}
+\label{sec:mlmodels}
 
-\section{Solution Statement}
-\label{sec:solution}
 Predicts the stock prices and also measures the accuracy of these forecasts. Using back-testing a method where we roll back time and measure the accuracy of these forecasts.  Slice the sample data from (historical) training set and apply the machine learning models to get the forecast.  By comparing the predictive results of the model against the historical results,  back-testing can determine whether the model has predictive value. 
 
+The QuantFy application at: \href{http://quantfy.herokuapp.com/mlModels}{\color{blue}{http://quantfy.herokuapp.com/mlModels}}, where user can test any other ticker symbols. But for this discussion we have chosen, Google (GOOG), Apple (AAPL), Microsoft (MSFT) and IBM. These are the technology companies and the price behavior might be similar. However the code will generate a separate model for each ticker symbol.
 
+User can select two regression algorithms from:
 
-
-
-
-
-
+\begin{itemize}
+\item Mean-model,
+\item $k$-nearest neighbors,
+\item Random forest regressors,
+\item Linear regression, and
+\item Ridge regression.
+\end{itemize}
 
 \begin{figure}[!htbp]
-\label{fig:ridge}
+
 \begin{center}
-\includegraphics[height=0.5\textheight,width=\textwidth]{ridge.png}
-\caption{Prediction values for 30 days for IBM, TSLA and AAPL  using Ridge regression }
+\includegraphics[height=0.4\textheight,width=\textwidth]{knn_model.png}
+\caption{Prediction values for 15 days for AAPL, MSFT and, IBM using $k$-nearest neighbors }
+\label{fig:knn_mdl}
 \end{center}
 \end{figure}
 
 Left side of the RED dotted line indicates the past values, while the right side are the predicted values of the stock. 
 
 \begin{figure}[!htbp]
-\label{fig:ridge}
 \begin{center}
-\includegraphics[height=0.5\textheight,width=\textwidth]{mean.png}
-\caption{Prediction values for 30 days for IBM, TSLA and AAPL using the benchmark Mean model.}
+\includegraphics[height=0.4\textheight,width=\textwidth]{rfr_model.png}
+\caption{Prediction values for 15 days for AAPL, MSFT and, IBM using Random forest regressor.}
+\label{fig:rfr_mdl}
+\end{center}
+\end{figure}
+\end{itemize}
+
+Table~\ref{tab:mse} shows the Mean square error for the three ticker symbols chosen. From the Table~\ref{tab:mse} we clearly see that each ticker symbol (or stock) has different behavior. For instance AAPL stock show a linear behavior, with MSE being lower than benchmark (mean model) and showing a positive correlation coefficient for both Linear and Ridge algorithms as in Table~\ref{tab:corr}. 
+
+Typically, as the MSE decreases the correlation-coefficient increases (close to 1). The $k$-NN seem to perform well for IBM with lowest MSE and high $\rho$.
+
+
+
+\begin{table}
+\begin{center}
+\begin{tabular} {|c|c|c|c|}
+\hline \hline
+\textbf{ML algorithm} & \textbf{AAPL} & \textbf{MSFT} & \textbf{IBM} \\ \hline
+$k$-nearest neighbors & 862.082 & 469.81 & 136.86 \\ \hline
+Random forest regessor & 1390.155 & 468.274 & 164.709 \\ \hline
+Linear regression &875.99 & 428.24 & 132.94  \\ \hline
+Ridge regression & 876.146 & 437.069 & 132.92  \\ \hline
+Mean model & 897.55 & 423.58 & 183.39  \\ \hline
+\hline
+\end{tabular}
+\end{center}
+\caption{Mean square error}
+\label{tab:mse}
+\end{table}
+
+\begin{table}
+\begin{center}
+\begin{tabular} {|c|c|c|c|}
+\hline \hline
+\textbf{ML algorithm} & \textbf{AAPL} & \textbf{MSFT} & \textbf{IBM} \\ \hline
+$k$-nearest neighbors &0.252 & -0.023 & 0.293 \\ \hline
+Random forest regressor &  -0.33044 & -0.0761 & 0.0614  \\ \hline
+Linear regression & 0.649 & -0.1706 & 0.196  \\ \hline
+Ridge regression &0.677 & -0.145 & 0.197 \\ \hline
+Mean model & NaN & NaN & NaN  \\ \hline
+\hline
+\end{tabular}
+\end{center}
+\caption{Correlation coefficient ($\rho$)}
+\label{tab:corr}
+\end{table}
+
+However for the Microsoft (MSFT), the MSE seem to be consistently high for all the algorithms used in the project. The number of  features used in the project are less. Adding more features such as P/E ratio, volume of trades, can definitely improve the performance of the algorithm and hence correctly capture the behavior of the stock. 
+
+We clearly see that all the algorithms used in this project provide a significant improvement over the benchmark algorithm. 
+
+\begin{figure}[!htbp]
+\begin{center}
+\includegraphics[height=0.4\textheight,width=\textwidth]{lr_model.png}
+\caption{Prediction values for 15 days for AAPL, MSFT and, IBM using Linear regression.}
+\label{fig:lr_mdl}
 \end{center}
 \end{figure}
 
-\end{itemize}
-
+\begin{figure}[!htbp]
+\begin{center}
+\includegraphics[height=0.4\textheight,width=\textwidth]{ridge_mdl.png}
+\caption{Prediction values for 15 days for AAPL, MSFT and, IBM using Ridge regression.}
+\label{fig:ridge_mdl}
+\end{center}
+\end{figure}
 
 
 \section{Conclusion}
 \label{sec:con}
 
-Commodity stocks (as future work) , Reinforcement Learning (future work)
+This project we have provided analysis for the stock price data. Various visualizations are provided to see the behavior of particular stock price. Many parameters are computed to understand the dynamic nature of the data. Since stock price data is a time-series, we have provided the characteristics of time-series data and how it is different from any other data set.
 
+Using convex optimization techniques, the portfolio optimization can be done and the allocations of assets to the stocks can be choose optimally.
+
+Various machine-learning algorithms has been analyzed for the ticker symbols. We have seen that every ticker symbol has an unique behavior. For some symbols we see linear relationship and for other we see non-linear or stochastic behavior. Using the metrics such as MSE and correlation-coefficient  one can assess the quality of the prediction.
+
+Using cross-validation and parameter tunning, we can minimize the errors, i.e., select the parameters such that the model is neither biased nor overfitted. Thus the model works well for the unseen data.
+
+Regression algorithms possess certain drawback for the stock price predictions such as:
+
+\begin{itemize}
+\item Noisy and uncertain. 
+\item It is challenging to estimate the confidence in the prediction.
+\item Does not capture the stochastic behavior well.
+\end{itemize}
+
+We can overcome of these issues in regression using Reinforcement learning. As the next steps to improve the project, we will use Q-learning algorithms for the stock price predictions. Using advanced algorithms for feature selection, one can further improve the accuracy of models. 
+
+As the further steps this application could be extended to make trading strategies based on the predictions.
+
+Also we will extend the work for estimating the prices for commodity stocks such oil, gas, gold, etc.
 \bibliography{refs}
 
 \end{document}

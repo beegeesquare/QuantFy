@@ -322,7 +322,7 @@ def buildEstimator(X_data,Y_data,ml_model):
     if ml_model=="rf_algo":
         
         #print ml_model
-        param_grid={'oob_score':[True,False]}
+        param_grid={'n_estimators':range(10,100,10)}
         rfr_cv=GridSearchCV(RandomForestRegressor(),param_grid=param_grid,cv=tscv,scoring=scorer)
         
         rfr_cv.fit(X_data,Y_data)
@@ -333,7 +333,7 @@ def buildEstimator(X_data,Y_data,ml_model):
     
     if ml_model=="lr_algo":
         
-        param_grid={'n_estimators':range(10,100,5)}
+        param_grid={'fit_intercept':[True,False]}
         
         lr_cv=GridSearchCV(LinearRegression(),param_grid=param_grid,cv=tscv,scoring=scorer)
         
