@@ -24,6 +24,8 @@ import datetime as dt
 import util
 import apicall_data
 
+import statsmodels.api as sm
+
 from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.neighbors import KNeighborsRegressor
@@ -181,6 +183,8 @@ def computeFeatures(df,shift=5,split_number=60):
         
     for sym in df.columns:
         X_data=pd.DataFrame(index=df.index)
+        
+        
         
         # Join all the features
         X_data=X_data.join(normalized_bb[sym])
