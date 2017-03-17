@@ -572,6 +572,122 @@ In Ridge regression, the parameter that needs to be tuned is the regularization 
 \end{center}
 \end{figure}
 
+\subsection{Coding implementation}
+\label{sec:coding}
+
+This section we briefly describe the coding implementation/challenges of machine learning algorithms using all the processes described so far in the data wrangling, calculating feature sets,  cross-validation, machine-learning algorithm, hyper-parameter tunning and finally computing metrics.
+
+\begin{enumerate}
+\item We start with collecting data from Quandl  or other sources. The module \\
+\texttt{apicall\_data.py} consists of all code related to the querying the data from various sources. In this work, we have only enabled the Quandl data-sources. 
+
+
+\begin{minted}{python}
+ dataframe=quandl.get('WIKI/%s'%(symbol),start_date=
+ start_dt.strftime('%Y-%m-%d'), end_date=end_dt.strftime('%Y-%m-%d'))
+\end{minted}
+
+
+\texttt{symbol} is the ticker symbol and the start and the end dates for the which the date is collected and stored as \texttt{pandas} dataframe object.
+\item However it is possible that the dataframe consists of \texttt{NaN} values, i.e., the missing data. We use a S\&P500 as benchmark symbol to clean up the data.
+
+\begin{minted}{python}
+df_temp = pd.DataFrame(tpl[1]['data']['Adj. Close'],
+               index=tpl[1]['data'].index)
+df_temp = df_temp.rename(columns={'Adj. Close': tpl[0]}) 
+df = df.join(df_temp)
+if tpl[0] == benchmark_symbol:  # drop dates SPY did not trade
+  df = df.dropna(subset=[benchmark_symbol])
+df=df.dropna(axis=0) # This drops any NaN 
+\end{minted}
+\item After cleaning up the data, the next step is to compute the feature set for the machine learning algorithm, i.e., the $X_i$, where $i$ is the $i^{th}$ feature. We compute the features using the equations described in (\ref{eq:bb_norm}),  (\ref{eq:vol}), and  (\ref{eq:mtm}). Below are the coding details of these features:
+
+\begin{minted}{python}
+rm[sym]=pd.Series.rolling(df[sym],window=window)
+             .mean().to_frame() # Rolling mean
+rstd[sym]=pd.Series.rolling(df[sym],window=window).std()
+              .to_frame() # Rolling std
+normalized_bb[sym]=(df[sym] - rm[sym])/(2 * rstd[sym])
+momentum[window:] = (df[window:]/df[:-window].values) - 1
+daily_returns=compute_daily_returns(df)
+volatility=get_rolling_std(daily_returns,window)
+\end{minted}
+\item Since we are using the back-testing method, we need to shift (lag) the features, before we split the data in train (train + cross-validation) and test sets (will be used to test the algorithm for unseen data).
+
+\begin{minted}{python}
+# shift is the number of days in the future
+Y_shifted=df[sym].shift(-shift);
+\end{minted}
+
+Now we split the data as follows:
+\begin{minted}{python}
+# split_number is how much we want the data to be test set  
+X_train=X_data.ix[:-shift,:].ix[:-split_number,:]
+X_test=X_data.ix[:-shift,:].ix[-split_number:,:] 
+Y_train=Y_shifted.ix[:-shift].ix[:-split_number]
+Y_test=Y_shifted.ix[:-shift].ix[-split_number:]
+\end{minted}
+
+\item Cross-validation set: Training data can be further split into train and cross-validation set, as follows:
+
+\begin{minted}{python}
+from sklearn.model_selection import TimeSeriesSplit
+tscv=TimeSeriesSplit(n_splits=5)
+\end{minted}
+
+Time series split creates 5 sets of train and cross-validation using the forward chaining method described in Fig~\ref{fig:ts_xval}.
+
+\item We have considered few regression algorithms to test the performance of predictions. Depending on the behavior of stock, we can have choose appropriate algorithm of a particular stock symbol.
+
+\begin{minted}{python}
+from sklearn.dummy import DummyRegressor # Used for benchmark
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import LinearRegression,Ridge
+\end{minted}
+
+\item We use MSE as the metric, that should be minimized for picking the right parameters for the regression algorithm.
+
+\begin{minted}{python}
+from sklearn.metrics import mean_squared_error,make_scorer
+scorer=make_scorer(mean_squared_error,greater_is_better=False)
+\end{minted}
+
+\item For hyper-parameter tunning we use \texttt{GridSearchCV}. Here we describe the kNN algorithm using grid-search cross validation. For other algorithms, refer to the code-base \cite{sc}.
+
+\begin{minted}{python}
+param_grid={'n_neighbors':range(3,20,1)}
+n_neighbours_cv=GridSearchCV(KNeighborsRegressor(),
+	param_grid=param_grid, cv=tscv, scoring=scorer)
+\end{minted}
+
+The number of nearest neighbors is varied from 3 to 20 in steps of 1, and cross-validated such that MSE is minimized.
+
+\item Pick the best estimator, predict the $y$ and compute the metrics on the test set.
+
+\begin{minted}{python}
+# Return the optimal model
+bestEst= n_neighbours_cv.best_estimator_
+# Predict
+Y_pred_test=bestEst.predict(X_test) 
+# Compute metrics
+mse= mean_squared_error(Y_test, Y_pred_test)
+correlation_mat= np.corrcoef(Y_pred_test,Y_test)
+correction_coff=correlation_mat[0,1];
+\end{minted}
+
+\item Finally, apply the model to the future prediction of the stock symbol
+
+\begin{minted}{python}
+X_pred=X_pred=X_data.ix[-shift:,:] 
+Y_future=bestEst.predict(X_pred)
+\end{minted}
+
+\end{enumerate}
+
+The most challenging part of the coding is picking up the right hyper-parameters for the machine-learning models. We have seen in Section~\ref{sec:hyper} if the right value of the parameter is not chosen, then the MSE could be very high and model might be significantly inaccurate. Also due high variability in  behavior across various stocks, the parameter chosen for one stock might not apply for other stock (example Fig.~\ref{fig:knn_hyper}). One has to carefully choose the parameters such that model should not be unbiased and overfitted. 
+Tunning of hyper-parameters with cross-validation can take long time to run. So, we need to be cautious about that and choose the range wisely !
+
 \section{Results}
 
 In this section we discuss various results obtained for portfolio optimization, market simulator, and machine learning models. The first two subsections ~\ref{sec:opt} and ~\ref{sec:sim}, though not directly related to the the concepts of machine-learning. These two sections will be particularly important to make the trading strategies, based on the prediction values obtained from the machine learning models. For instance if the machine learning model forecasts with certain accuracy that the stock price is going to increase in next 5 days, then the trader can make decisions to buy and those improve the portfolio performance of the client. This will be the future extensions of this work.
@@ -665,7 +781,7 @@ The Fig. 9 is generated using orders file located at:
 
 Predicts the stock prices and also measures the accuracy of these forecasts. Using back-testing a method where we roll back time and measure the accuracy of these forecasts.  Slice the sample data from (historical) training set and apply the machine learning models to get the forecast.  By comparing the predictive results of the model against the historical results,  back-testing can determine whether the model has predictive value. 
 
-The QuantFy application at: \href{http://quantfy.herokuapp.com/mlModels}{\color{blue}{http://quantfy.herokuapp.com/mlModels}}, where user can test any other ticker symbols. But for this discussion we have chosen, Google (GOOG), Apple (AAPL), Microsoft (MSFT) and IBM. These are the technology companies and the price behavior might be similar. However the code will generate a separate model for each ticker symbol.
+The QuantFy application at: \href{http://quantfy.herokuapp.com/mlModels}{\color{blue}{http://quantfy.herokuapp.com/mlModels}}, where user can test any other ticker symbols. But for this discussion we have chosen, Apple (AAPL), Microsoft (MSFT) and IBM. These are the technology companies and the price behavior might be similar. However the code will generate a separate model for each ticker symbol.
 
 User can select two regression algorithms from:
 
