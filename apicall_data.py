@@ -7,6 +7,21 @@ import os
 import quandl
 import datetime as dt
 import pandas as pd
+from requests_oauthlib import OAuth1
+import simplejson as json
+
+'''
+with open("secrets/quandl_secrets.json.nogit") as fh:
+    secrets = json.loads(fh.read())
+
+print secrets
+# create an auth object
+auth = OAuth1(
+    secrets["api_key"]
+    
+)
+'''
+
 
 cache_dir='cache'
 if not os.path.exists(cache_dir):
@@ -22,6 +37,7 @@ def get_data_from_quandl(symbol,features=['Close','Adj. Close','Open','Adj. Open
     
     
     quandl.ApiConfig.api_key = "MKXxiRmCQyr6ysZ5Qd2x"
+    # quandl.ApiConfig.api_key=auth
     # For SPY use Yahoo instead of WIKI, but it will only give (Open, High,close, adjusted close, volume)
     if symbol=='SPY':
         
