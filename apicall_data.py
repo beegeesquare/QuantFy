@@ -9,6 +9,7 @@ import datetime as dt
 import pandas as pd
 from requests_oauthlib import OAuth1
 import simplejson as json
+from ediblepickle import checkpoint
 
 '''
 with open("secrets/quandl_secrets.json.nogit") as fh:
@@ -27,9 +28,15 @@ cache_dir='cache'
 if not os.path.exists(cache_dir):
     os.mkdir(cache_dir)
 
-
+#@checkpoint(key=lambda args, kwargs:'_'.join(map(str, ['-'.join(args[0]),'-'.join(kwargs['features']),
+#                                                       kwargs['start_dt'],kwargs['end_dt'],'.p'])), work_dir=cache_dir)
 #@checkpoint(key=lambda args, kwargs:'_'.join(map(str, ['-'.join(args[0]),'symbols','-'.join(args[1]),'features','.p'])), work_dir=cache_dir)
-def get_data_from_quandl(symbol,features=['Close','Adj. Close','Open','Adj. Open'],start_dt=dt.datetime(2000,1,1),end_dt=dt.datetime.today()):
+
+#@checkpoint(key=lambda args, kwargs:args[0]+'.p', work_dir=cache_dir)
+
+def get_data_from_quandl(symbol,features=['Close','Adj. Close','Open','Adj. Open'],
+                         start_dt=dt.datetime(2000,1,1),
+                         end_dt=dt.datetime.today()):
     """
     Gets the required data for the given symbol from quandl and store it as the csv file
     Store the file name as : {SYMBOL.csv}. This has some problems
