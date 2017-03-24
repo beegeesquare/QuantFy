@@ -6,11 +6,12 @@ import numpy as np
 from bokeh.plotting import figure, show,ColumnDataSource
 from bokeh.io import output_file
 from bokeh.embed import components
-from bokeh.palettes import Spectral11
+from bokeh.palettes import Spectral11,viridis
 from bokeh.charts import Line,Area
 from bokeh.layouts import gridplot,WidgetBox
 from bokeh.models import HoverTool, Span, Label
 from bokeh.models.widgets import Panel, Tabs, DataTable,TableColumn
+
 
 import pandas as pd
 import datetime as dt
@@ -96,43 +97,17 @@ def plot_stock_prices():
         
         app_quantfy.vars['compute_features']=defaultdict(); # This is a dictionary for computing the requested features
                
-        if 'closeprice' in request.form: app_quantfy.vars['price_features']['Close']=request.form['closeprice'] # Keys here should be in the same form that we get from database (like quandl)
-                   
-        if 'adjclose' in request.form:  app_quantfy.vars['price_features']['Adj. Close']=request.form['adjclose']
         
-        if 'openprice' in request.form: app_quantfy.vars['price_features']['Open']=request.form['openprice']
-        
-        if 'adjopen' in request.form: app_quantfy.vars['price_features']['Adj. Open']=request.form['adjopen']
         
         if 'bench_sym' in request.form: 
             app_quantfy.vars['bench_sym']=request.form['bench_sym']
         else:
             app_quantfy.vars['bench_sym']='SPY'
         
-        # These are the parameters that needs to be computed for each symbol. For this to be computed we need adjusted closing price
-        
-        if 'rollingmean' in request.form: app_quantfy.vars['compute_features']['RM']=request.form['rollingmean'] 
-                   
-        if 'rollingstd' in request.form:  app_quantfy.vars['compute_features']['RSTD']=request.form['rollingstd']
-        
-        if 'bollingerbands' in request.form: app_quantfy.vars['compute_features']['BOLLBNDS']=request.form['bollingerbands']
-        
-        if 'dailyreturns' in request.form: app_quantfy.vars['compute_features']['DR']=request.form['dailyreturns']
-        
-        if 'cummdailyreturns' in request.form: app_quantfy.vars['compute_features']['CDR']=request.form['cummdailyreturns']
-        
-        if 'avgdailyreturns' in request.form: app_quantfy.vars['compute_features']['ADR']=request.form['avgdailyreturns']
-        
-        if 'sharperatio' in request.form: app_quantfy.vars['compute_features']['SR']=request.form['sharperatio']
-        
-               
         
         if (app_quantfy.vars['sym'][0]=='') :  # sym is a list delimited by ;
             return render_template('plot_prices.html',error_sym='<font size="3" color="red" > Provide at least one ticker symbol </font>') 
                
-        if len(app_quantfy.vars['price_features'])==0:
-            return render_template('plot_prices.html',error_features='<font size="3" color="red"> At least one feature has to be selected </font>')
-        
         
         symbols=app_quantfy.vars['sym'] # Here symbol will be a list
     
@@ -144,13 +119,17 @@ def plot_stock_prices():
         #print symbols,usr_price_features, app_quantfy.vars['start_date'],app_quantfy.vars['end_date']
         
         if app_quantfy.vars['data_src']=='get_data_quandl':   
-             # This is list of tuples, with first element in the tuple being symbol and second element being dict
-             # Here get the data for all the price features, filter it in the plot_symbols function, so all the price features are present here
-            full_data=[(sym, apicall_data.get_data_from_quandl(symbol=sym, start_dt=app_quantfy.vars['start_date'],end_dt=app_quantfy.vars['end_date'])
+            # This is list of tuples, with first element in the tuple being symbol and second element being dict
+            # Here get the data for all the price features, filter it in the plot_symbols function, so all the price features are present here
+            features=['Open','Close','High','Low','Volume','Adj. Close']
+            
+            full_data=[(sym, apicall_data.get_data_from_quandl(symbol=sym, features=features,start_dt=app_quantfy.vars['start_date'],end_dt=app_quantfy.vars['end_date'])
                         ) for sym in symbols]
             
             # Pass user selected price features to the plot function
-            script_ele,div_ele=plot_symbols(full_data,usr_price_features, 'Quandl')
+            #script_ele,div_ele=plot_symbols(full_data,usr_price_features, 'Quandl')
+            
+            script_ele,div_ele=plot_symbols_interactive(full_data, 'Quandl')
             
             computed_df,describe_df=compute_params(full_data)
             
@@ -351,7 +330,73 @@ def portfolio_page():
                                )
     
      
+
+def plot_symbols_interactive(list_data_tuples,data_src):
+    """
+    Input: List of tuples where (x[0] is a symbol, x[1] is a dict) and data-source
+    This function returns the div element of all symbols, for given features.
+    So this div element contains plots==len(symbols), 
+    """
+    #script_el_data=''
+    #div_el_data='<h4> Time-series plot for all symbols with chosen features </h4><table style="width 50%"> <tr>'
+    list_plots=[]
+    usr_price_features=['Open','High','Low','Close','Volume','Adj. Close']
+    # Just draw one plot for all the ticker symbols requested for
+    TOOLS='pan,wheel_zoom,box_zoom,reset,save,box_select,crosshair'
     
+    hover=HoverTool(
+            tooltips=[
+                #("Date",'$x.strftime("%Y-%m-%d")'),
+                ("Adj. Close",'$y'),
+                ("Open", "@Open"),
+                ("Close", "@Close"),
+                ("Low", "@Low"),
+                ("High","@High"),
+                ("Volume (M)","@Volume")
+            ]
+        )
+    
+    script_el_data=''
+    div_el_data=''
+    # Create a data frame with adjusted close price as the main
+    adj_prices_df=util.get_data(list_data_tuples)
+    
+    list_symbols=list(adj_prices_df.columns)
+    
+    colors=viridis(len(list_symbols))
+    
+    p = figure(width=1200, height=500, x_axis_type="datetime",tools=[TOOLS,hover])
+  
+   
+    #print colors
+    
+    # Create an area-plot for adjusted close price for each symbol
+    
+    for (i,tpl) in enumerate(list_data_tuples):
+        
+        if 'error' not in tpl[1]:
+            dfAllFeatures=tpl[1]['data'] # df for all features for a particular symbol
+            #print dfAllFeatures.columns
+            dfAllFeatures['Volume']=dfAllFeatures['Volume']/1.e6
+            # 
+            source=ColumnDataSource(data=dfAllFeatures)
+            #source=ColumnDataSource({'x':dfAllFeatures.index,'y':dfAllFeatures['Adj. Close'],})
+            p.line('Date','Adj. Close',line_width=2,source=source,legend=tpl[0],color=colors[i]) 
+        
+    
+        else:
+            print "Symbol %s not found"%(tpl[0])
+    
+    p.title.text = "Data for requested %s ticker symbols from %s data source"%(", ".join(list_symbols),data_src)
+    p.legend.location = "top_left"
+    p.xaxis.axis_label = 'Date'
+    p.yaxis.axis_label = 'Price (Adjusted Close)'
+    
+    script_el_data, div_el_data=components(p)
+        
+    return script_el_data, div_el_data
+
+  
 
 def plot_symbols(list_data_tuples,usr_price_features,data_src):
     """
@@ -472,8 +517,7 @@ def plot_params(list_data_tuples):
     
     param_dict={'Rolling mean':rolling_mean,'Rolling SD': rolling_std,'Bollinger Bands':(u_bollinger_bnd,l_bollinger_bnd),'Daily returns':daily_returns}
     
-    #print Paired
-    colors=Spectral11[0:len(daily_returns.columns)] # Paired is dict with keys as the number of colors needed. Largest Key is 12
+    colors=viridis(len(daily_returns.columns));
     TOOLS='pan,wheel_zoom,box_zoom,reset,save,box_select,crosshair'
    
 
@@ -483,7 +527,7 @@ def plot_params(list_data_tuples):
                 ("Metric",'$y')
                 ]
             )
-        p = figure(width=900, height=500, x_axis_type="datetime",tools=[TOOLS,hover])
+        p = figure(width=1200, height=500, x_axis_type="datetime",tools=[TOOLS,hover])
     
         if param =="Bollinger Bands":
             upper_band=param_dict[param][0]

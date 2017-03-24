@@ -150,19 +150,13 @@
                         </table>
                         <br>
                         <table style="width:100%">
-                        <col width="175">
-                        <col width="350">
-                        <col width ="350">
+                        <col width="400">
+                        <col width ="400">
                         <tr> 
-                            <th>  <h4> Select price related features <p> {{ error_features | safe }} </p> </h4> </th>
                             <th> <h4> Description of the data </h4> </th>
                             <th> <h4> Computed values</h4> </th>
                         </tr>   
-                        <tr> <td>  <input id="cp" type="checkbox" name="closeprice"> Closing price <br> 
-                        <input id="acp" type="checkbox" name="adjclose"> Adjusted closing price <br>
-                        <input id="op" type="checkbox" name="openprice"> Opening price <br>
-                        <input id="aop" type="checkbox" name="adjopen"> Adjusted opening price <br> </td>
-                        
+                        <tr>                         
                         <td>
                             {{ div_describe | safe  }}
                         </td>
