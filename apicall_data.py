@@ -28,6 +28,8 @@ cache_dir='cache'
 if not os.path.exists(cache_dir):
     os.mkdir(cache_dir)
 
+quandl.ApiConfig.api_key = "MKXxiRmCQyr6ysZ5Qd2x"
+
 #@checkpoint(key=lambda args, kwargs:'_'.join(map(str, ['-'.join(args[0]),'-'.join(kwargs['features']),
 #                                                       kwargs['start_dt'],kwargs['end_dt'],'.p'])), work_dir=cache_dir)
 #@checkpoint(key=lambda args, kwargs:'_'.join(map(str, ['-'.join(args[0]),'symbols','-'.join(args[1]),'features','.p'])), work_dir=cache_dir)
@@ -42,9 +44,6 @@ def get_data_from_quandl(symbol,features=['Close','Adj. Close','Open','Adj. Open
     Store the file name as : {SYMBOL.csv}. This has some problems
     """
     
-    
-    quandl.ApiConfig.api_key = "MKXxiRmCQyr6ysZ5Qd2x"
-    # quandl.ApiConfig.api_key=auth
     # For SPY use Yahoo instead of WIKI, but it will only give (Open, High,close, adjusted close, volume)
     if symbol=='SPY':
         
@@ -97,6 +96,13 @@ def get_data_from_quandl(symbol,features=['Close','Adj. Close','Open','Adj. Open
         except quandl.errors.quandl_error.NotFoundError:
             data_dict={'error':'Symbol not found'}
             return data_dict
+
+def get_commodity_data_from_quandl(code,comm,start_dt=dt.datetime(2000,1,1),
+                         end_dt=dt.datetime.today()):
+    '''
+    This function returns the data for the given code and the commodity stock from quandl
+    '''
+    return
 
 def get_data_from_quandl_old(symbol, base_dir='../data'):
     """

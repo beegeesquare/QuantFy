@@ -25,6 +25,7 @@ from price_plot_dynamic import plot_stock_prices_1
 from price_plot_dynamic_2 import plot_stock_prices_2
 from martket_simulator import marketSim
 from ml_models import mlModels
+from commodity import commodity
 
 # import bokeh
 # print (bokeh.__version__)
@@ -35,6 +36,7 @@ app_quantfy.register_blueprint(plot_stock_prices_1)
 app_quantfy.register_blueprint(plot_stock_prices_2)
 app_quantfy.register_blueprint(marketSim)
 app_quantfy.register_blueprint(mlModels)
+app_quantfy.register_blueprint(commodity)
 
 @app_quantfy.route('/welcome_page_quantfy')
 def welcome_page_quantfy():
