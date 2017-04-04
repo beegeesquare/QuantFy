@@ -1,0 +1,139 @@
+<!doctype html>
+<title> QuantFy: Time-series plots </title>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+<link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-0.12.3.min.css" type="text/css" />
+<script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-0.12.4.min.js"></script>
+<link href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-0.12.4.min.css"  rel="stylesheet" type="text/css">
+<script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-0.12.4.min.js"></script>
+
+<script>
+  $( function() {
+    var dateFormat = "mm/dd/yy",
+      from = $( "#from" )
+        .datepicker({
+          defaultDate: "+1w",
+          changeMonth: true,
+          changeYear:true,
+          yearRange:"c-50:c"
+         })
+        .on( "change", function() {
+          to.datepicker( "option", "minDate", getDate( this ) );
+        }),
+      to = $( "#to" ).datepicker({
+        defaultDate: "+1w",
+        changeMonth: true,
+        changeYear: true,
+        yearRange:"c-50:c"
+          })
+      .on( "change", function() {
+        from.datepicker( "option", "maxDate", getDate( this ) );
+      });
+ 
+    function getDate( element ) {
+      var date;
+      try {
+        date = $.datepicker.parseDate( dateFormat, element.value );
+      } catch( error ) {
+        date = null;
+      }
+ 
+      return date;
+    }
+  } );
+  </script>
+
+{{ script_symbols |safe }}
+{{ script_params | safe }}
+
+<style>
+table {
+    width:100%;
+}
+table, th, td {
+    border: 0px ;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 5px;
+    text-align: left;
+}
+table#t01 tr:nth-child(even) {
+    background-color: #eee;
+}
+table#t01 tr:nth-child(odd) {
+   background-color:#fff;
+}
+table#t01 th {
+    background-color: black;
+    color: white;
+}
+</style>
+<div class=page>
+	<h1> Plot the desired stock features </h1>
+	<div class=metanav>
+	<h4>
+		Please enter a stock ticker eg. GOOG, and check desired features. Mulitple stock (symbols) are seperated by ; <br></br>
+		Default benchmark comparision is SPY (SP 500 trade).
+		To change the default value, use the respective ticker symbol in the form below
+	</h4>
+	<!-- this is to select the data-source for the stock data -->
+	
+	
+	<form id='tickersymform' method='post' action='price_plot' >
+	<h4> Select a Data-source (More to be added):  {{ error_data | safe }}</h4> 
+   	<input type='radio' name='data' id='yahoo_data' value='get_data_yahoo' /> Yahoo Finance (yet to be enabled) <br> {{ error_yahoo | safe }} <!-- name should be same for all radio buttons -->
+   	<input type='radio' name='data' id='quandl_data' value= 'get_data_quandl' /> Quandl <br>
+    
+   	<table style="width:80%">
+     <tr>
+      <td> <p> Ticker Symbol(s): <input type='text' name='sym' placeholder="GOOG" /> {{ error_sym | safe }}</p> </td>
+      <td> <p> Benchmark symbol: <input type='text' name='bench_sym' value='SPY' /> </p> </td> <!-- default value is SP500 -->
+      <td> <p> Start date:       <input type='text' name='start_date' id="from" placeholder="MM/DD/YYYY" /> {{ error_start_date | safe }} </p></td>
+      <td> <p> End date:         <input type='text' name='end_date' id="to" placeholder="MM/DD/YYYY"/> {{ error_end_date | safe }} </p> </td>
+     </tr>
+    </table>
+    <br>
+    <table style="width:100%">
+    <tr> 
+    	<th>  <h4> Price related features <p> {{ error_features | safe }} </p> </h4> </th>
+    	<th> <h4> Select features to be computed (not enabled yet) </h4> </th>
+    	<th> <h4> Computed values </h4> </th>
+    </tr>	
+    <tr> <td>  <input id="cp" type="checkbox" name="closeprice"> Closing price <br> 
+    <input id="acp" type="checkbox" name="adjclose"> Adjusted closing price <br>
+    <input id="op" type="checkbox" name="openprice"> Opening price <br>
+    <input id="aop" type="checkbox" name="adjopen"> Adjusted opening price <br> </td>
+    <td>
+    <input id="RM" type="checkbox" name="rollingmean"> Rolling mean (RM) <br> 
+    <input id="RSTD" type="checkbox" name="rollingstd"> Rolling standard deviation (RSTD) <br>
+    <input id="BOLLBNDS" type="checkbox" name="bollingerbands"> Bollinger bands <br>
+    <input id="DR" type="checkbox" name="dailyreturns"> Daily returns (DR) <br>
+    <input id="CDR" type="checkbox" name="cummdailyreturns"> Cummulative daily return (CDR) <br>
+    <input id="ADR" type="checkbox" name="avgdailyreturns"> Average daily return (CDR) <br>
+    <input id="STDDR" type="checkbox" name="stddailyreturns"> Standard deviation daily return (STDDR) <br>
+    <input id="SR" type="checkbox" name="sharperatio"> Sharpe ratio (SR) <br>
+    </td>
+
+    <td>
+    	{{ computed_params |safe }}
+    </td>
+
+
+    </tr>
+    </table> 
+    <input type='submit' value='Submit' />
+     
+    </form>
+
+    
+
+    {{ plot_div_symbols | safe }} <!-- this will be a table form, and this will be for all the symbols -->
+    {{ plot_div_features | safe }} <!-- this will be a table form, and this will be for all the features -->
+	
+
+	</div>
+</div>
+</html>

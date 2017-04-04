@@ -1,0 +1,136 @@
+<!doctype html>
+<title> QuantFy: Portfolio optimizer </title>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script>
+  $( function() {
+    var dateFormat = "mm/dd/yy",
+      from = $( "#from" )
+        .datepicker({
+          defaultDate: "+1w",
+          changeMonth: true,
+          changeYear:true,
+          yearRange:"c-50:c"
+         })
+        .on( "change", function() {
+          to.datepicker( "option", "minDate", getDate( this ) );
+        }),
+      to = $( "#to" ).datepicker({
+        defaultDate: "+1w",
+        changeMonth: true,
+        changeYear: true,
+        yearRange:"c-50:c"
+          })
+      .on( "change", function() {
+        from.datepicker( "option", "maxDate", getDate( this ) );
+      });
+ 
+    function getDate( element ) {
+      var date;
+      try {
+        date = $.datepicker.parseDate( dateFormat, element.value );
+      } catch( error ) {
+        date = null;
+      }
+ 
+      return date;
+    }
+  } );
+  </script>
+<link rel="stylesheet" href="//cdn.pydata.org/bokeh/release/bokeh-0.12.3.min.css" type="text/css" />
+<script type="text/javascript" src="//cdn.pydata.org/bokeh/release/bokeh-0.12.3.min.js"></script>
+{{ script_not_opt |safe }}
+{{ script_opt | safe }}
+
+
+<style>
+table {
+    width:100%;
+}
+table, th, td {
+    border: 0px ;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 5px;
+    text-align: left;
+}
+table#t01 tr:nth-child(even) {
+    background-color: #eee;
+}
+table#t01 tr:nth-child(odd) {
+   background-color:#fff;
+}
+table#t01 th {
+    background-color: black;
+    color: white;
+}
+</style>
+
+<div class=page>
+	<h1> QuantFy: Market predictor using Machine Learning </h1>
+  <h5> Make every penny worth !</h5>
+  <h2> This is very beginning of the web-application </h2>
+	<div class=metanav>
+   <h2> Portfolio optimizer</h2>
+
+   <form id='tickersymform' method='post' action='portfolio' >
+	<h4>
+		Please enter a stock ticker eg. GOOG. Mulitple stock (symbols) are seperated by ; <br></br>
+		Default benchmark comparision is SPY (SP 500 trade).
+		To change the default value, use the respective ticker symbol in the form below
+		Sum of your input allocations should sum to 1
+	</h4>
+       
+   	<table style="width:80%">
+     <tr>
+      <td> <p> Ticker Symbol(s): <input type='text' name='sym' placeholder="GOOG" /> {{ error_sym | safe }}</p> </td>
+      <td> <p> Benchmark symbol: <input type='text' name='bench_sym' value='SPY' /> </p> </td> <!-- default value is SP500 -->
+      <td> <p> Start date:       <input type='text' name='start_date' id="from" placeholder="MM/DD/YYYY" /> {{ error_start_date | safe }} </p></td>
+      <td> <p> End date:         <input type='text' name='end_date' id="to" placeholder="MM/DD/YYYY"/> {{ error_end_date | safe }} </p> </td>
+      <td> <p> Start value of portfolio:   <input type='text' name='start_value' id="sv" value="100000" /> </p> </td>
+      <td> <p> Your (guess) allocations:   <input type='text' name='guess_alloc' id="alloc" placeholder="0.2;0.3;0.4;0.1"/> {{error_alloc | safe }} </p> </td>
+     </tr>
+    </table>
+
+    <br>
+    <input type='submit' value='Run optimization' />
+    </form>
+   	<table style="width:80%">
+     
+	<tr>
+      <td> <p>  {{ not_opt | safe }} </p> </td>
+      <td> <p>  {{ opt | safe }}</p> </td>
+     </tr>
+
+     <tr>
+      <td> <p>  {{ opt_alloc | safe }} </p> </td>
+     </tr>
+
+
+     <tr>
+      <td> <p>  {{ plot_not_opt | safe }} </p> </td>
+      <td> <p>  {{ plot_opt | safe }}</p> </td>
+     </tr>
+
+
+
+    </table>
+
+    
+     
+    
+
+
+
+
+
+
+
+
+
+
+	</div>
+</div>
+</html>
