@@ -97,12 +97,17 @@ def get_data_from_quandl(symbol,features=['Close','Adj. Close','Open','Adj. Open
             data_dict={'error':'Symbol not found'}
             return data_dict
 
-def get_commodity_data_from_quandl(code,comm,start_dt=dt.datetime(2000,1,1),
-                         end_dt=dt.datetime.today()):
+def get_commodity_data_from_quandl(code,comm,start_dt = dt.datetime(2000,1,1),
+                         end_dt = dt.datetime.today()):
     '''
     This function returns the data for the given code and the commodity stock from quandl
     '''
-    return
+    comm_df = quandl.get('%s/%s'%(code,comm), start_date = start_dt.strftime('%Y-%m-%d'),
+                         end_date=end_dt.strftime('%Y-%m-%d'))
+    
+    # print comm_df.head()
+    
+    return comm_df
 
 def get_data_from_quandl_old(symbol, base_dir='../data'):
     """
@@ -111,7 +116,7 @@ def get_data_from_quandl_old(symbol, base_dir='../data'):
     """
     
     quandl.ApiConfig.api_key = "MKXxiRmCQyr6ysZ5Qd2x"
-    if symbol=='SPY':
+    if symbol == 'SPY':
         dataframe=quandl.get('YAHOO/INDEX_SPY') # This will be a pandas dataframe
         # Here I need to rename Adjusted Close to Adj_Close...I think
     else:
