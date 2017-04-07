@@ -59,11 +59,16 @@ def commodity_models():
                                                  app_commodity.vars['start_date'],
                                                  app_commodity.vars['end_date'])
         # the dataframe consists of column name as 'Value', change it to Price
-        comm_df=comm_df.rename(columns={'Value':'Price'})
+        # Take the first column and rename that price
+        first_column_name = comm_df.columns[0] # Assuming this is some sort of price
         
-        exp_model_df=long_term_estimation(comm_df)
+        comm_df = comm_df.rename(columns={first_column_name:'Price'})
         
-        script_el_data, div_el_data=plot_commodity_interactive(exp_model_df)
+        #print comm_df.columns
+        
+        exp_model_df = long_term_estimation(comm_df)
+        
+        script_el_data, div_el_data = plot_commodity_interactive(exp_model_df)
         
         return render_template('commodity_prices.html', script_el_data=script_el_data, div_el_data=div_el_data)
 
