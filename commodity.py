@@ -1,6 +1,7 @@
 from flask import Flask,render_template,redirect,request, Blueprint, flash, url_for
 
 import numpy as np
+import statsmodels.api as sm
 from bokeh.plotting import figure, show,output_file,ColumnDataSource
 from bokeh.palettes import viridis
 from bokeh.embed import components
@@ -39,7 +40,7 @@ def commodity_models():
                 return render_template('commodity_prices.html',error_start_date='<font size="3" color="red" > Wrong date format </font>')
         else:
             # Take 5 years ago of the current date
-            app_commodity.vars['start_date']=dt.datetime.today()-dt.timedelta(days=30*365) # This does not give the accurate 10 years
+            app_commodity.vars['start_date']=dt.datetime.today()-dt.timedelta(days=30*365) # This does not give the accurate 30 years
         
         
         if  len(request.form['end_date'])!=0:
@@ -55,6 +56,49 @@ def commodity_models():
                                                  app_commodity.vars['comm_code'],
                                                  app_commodity.vars['start_date'],
                                                  app_commodity.vars['end_date'])
+        # the dataframe consists of column name as 'Value', change it to Price
+        comm_df=comm_df.rename(columns={'Value':'Price'})
         
+        script_el_data, div_el_data=plot_commodity_interactive(comm_df)
         
-        return render_template('commodity_prices.html')
+        return render_template('commodity_prices.html', script_el_data=script_el_data, div_el_data=div_el_data)
+
+def long_term_estimation(comm_df):
+    """
+    This function takes the 
+    """
+    
+    return comm_df
+
+
+def plot_commodity_interactive(comm_df):
+    """
+    Input: Takes the commodity data and commputes the 
+    This function returns the div and script element of the commodity plot.
+    
+    """
+    usr_price_features = ['Price','Estimator']
+    # Just draw one plot for all the ticker symbols requested for
+    TOOLS='pan,wheel_zoom,box_zoom,reset,save,box_select,crosshair'
+    
+    hover=HoverTool(
+            tooltips=[
+                ("Price",'$y')
+            ]
+        )
+    
+    p = figure(width=900, height=500, x_axis_type="datetime",tools=[TOOLS,hover])
+  
+    # Draw the plot for the oil price
+    p.line(comm_df.index, comm_df.Price, color='blue',line_width=2,legend=app_commodity.vars['comm_code'])
+    
+    
+    p.title.text = "Data for requested %s commodity from %s data source"%(app_commodity.vars['comm_code'],
+                                                                               app_commodity.vars['data_code'])
+    p.legend.location = "top_left"
+    p.xaxis.axis_label = 'Date'
+    p.yaxis.axis_label = 'Price'
+    
+    script_el_data, div_el_data=components(p)
+        
+    return script_el_data, div_el_data

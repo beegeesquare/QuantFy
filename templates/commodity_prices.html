@@ -45,6 +45,8 @@
   } );
   </script>
 
+{{ script_el_data | safe }}
+
 <head>
 
     <meta charset="utf-8">
@@ -129,24 +131,21 @@
                          For instance we can get the oil prices using DOE/RWTC
 
                          <form id='tickersymform' method='post' action='commodity' >  
-                        <table style="width:80%">
+                         <table style="width:80%">
                          <tr>
                           <td> <p> Commodity data source code: <input type = 'text' name ='data_code' value="DOE" /> {{ error_code | safe }}</p> </td>
                           <td> <p> Commodity code: <input type = 'text' name ='comm_code' value='RWTC' /> {{ error_comm_code | safe }} </p> </td> 
                         </tr>
-                        <tr>
+                            <tr>
                           <td> <p> Start date:       <input type='text' name='start_date' id="from" placeholder="MM/DD/YYYY" /> {{ error_start_date | safe }} </p></td>
 
                           <td> <p> End date:         <input type='text' name='end_date' id="to" placeholder="MM/DD/YYYY"/> {{ error_end_date | safe }} </p> </td> </tr>
-                          <tr>
-                          
-                         </tr>
                          <br>
-                        <input type='submit' class="btn btn-default" value='Plot' />
+                        
                         </table>
-                         
+                        <input type='submit' class="btn btn-default" value='Plot' />
                         </form>
-                         
+                         {{ div_el_data | safe }}
                         <br>
                         <br>
                         <br>
