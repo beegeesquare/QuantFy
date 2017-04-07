@@ -2,6 +2,8 @@ from flask import Flask,render_template,redirect,request, Blueprint, flash, url_
 
 import numpy as np
 import statsmodels.api as sm
+import sklearn.linear_model
+
 from bokeh.plotting import figure, show,output_file,ColumnDataSource
 from bokeh.palettes import viridis
 from bokeh.embed import components
@@ -59,16 +61,30 @@ def commodity_models():
         # the dataframe consists of column name as 'Value', change it to Price
         comm_df=comm_df.rename(columns={'Value':'Price'})
         
-        script_el_data, div_el_data=plot_commodity_interactive(comm_df)
+        exp_model_df=long_term_estimation(comm_df)
+        
+        script_el_data, div_el_data=plot_commodity_interactive(exp_model_df)
         
         return render_template('commodity_prices.html', script_el_data=script_el_data, div_el_data=div_el_data)
 
 def long_term_estimation(comm_df):
     """
-    This function takes the 
+    This function takes the basic value plot, and provides the long term estimator 
+    based on the exponential model
     """
+    comm_df['Julian'] = comm_df.index.to_julian_date() # Converts the index into Julian float value
+    comm_df = sm.add_constant(comm_df) # Add a constant field for the linear regression
+    # We can actually train a simple exponential model using the log(value), then train further models on the error.
+    exponential_model = sklearn.linear_model.Ridge().fit( 
+        X=comm_df[['Julian', 'const']], 
+        y=np.log(comm_df['Price'])
+    )
     
-    return comm_df
+    exp_model_df = comm_df
+    exp_model_df['Exponential_Model'] = np.exp(exponential_model.predict(comm_df[['Julian', 'const']]))
+    exp_model_df['Log_Error_Exponential'] = np.log(comm_df['Price'] / comm_df['Exponential_Model'])
+    
+    return exp_model_df
 
 
 def plot_commodity_interactive(comm_df):
@@ -90,8 +106,8 @@ def plot_commodity_interactive(comm_df):
     p = figure(width=900, height=500, x_axis_type="datetime",tools=[TOOLS,hover])
   
     # Draw the plot for the oil price
-    p.line(comm_df.index, comm_df.Price, color='blue',line_width=2,legend=app_commodity.vars['comm_code'])
-    
+    p.line(comm_df.index, comm_df.Price, color='blue',line_width=2,legend='Price')
+    p.line(comm_df.index, comm_df['Exponential_Model'], color='red',line_width=2,legend='Exponential_Model')
     
     p.title.text = "Data for requested %s commodity from %s data source"%(app_commodity.vars['comm_code'],
                                                                                app_commodity.vars['data_code'])
